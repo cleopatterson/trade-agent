@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "jobs_count": 1,
+  "jobs": [
+    {
+      "job_id": "757696",
+      "name": "Cabinet Painting",
+      "description": "Kitchen cabinet repaint. 20 doors and 12 drawers, solid timber.",
+      "subcategory": "Cabinet Painting",
+      "size": "medium",
+      "suburb": "Mosman",
+      "state": "NSW",
+      "postcode": "2088",
+      "distance_km": 5.8,
+      "budget_min": 2662,
+      "budget_max": 3946,
+      "budget_display": "$2,662 - $3,946",
+      "timeline": "Next 2 weeks",
+      "availability": "Flexible",
+      "posted_ago": "3 hours ago",
+      "posted_at": "2026-02-04T21:20:26.780Z",
+      "customer": {
+        "name": "Michael Chen",
+        "first_name": "Michael",
+        "phone": "0489 456 789",
+        "verified": true,
+        "member_since": "2025",
+        "jobs_posted": 4,
+        "rating": 4.6,
+        "contact_preference": "phone"
+      },
+      "attachments": [],
+      "lead_score": 90,
+      "urgency": "urgent",
+      "intent": "ready_to_hire",
+      "status": "new",
+      "our_response": null,
+      "conversation": [],
+      "outcome": null,
+      "agent_review": {
+        "score": 9,
+        "recommendation": "send",
+        "reasoning": "High-quality job matching the tradie's skills with a clear scope, good budget, and urgent timeline in a close location with a reputable customer.",
+        "draft_message": "Hi Michael, I specialise in timber cabinet repaints and saw your kitchen project. With 20 doors and 12 drawers, I can help you transform your kitchen's look efficiently and professionally. Would you like to discuss the details?",
+        "green_flags": [
+          "Specific job scope",
+          "Urgent timeline",
+          "Verified customer",
+          "High customer rating",
+          "Reasonable budget range",
+          "Close location"
+        ],
+        "red_flags": [],
+        "suggested_price_range": {
+          "min": 2500,
+          "max": 3800
+        }
+      }
+    }
+  ],
+  "business_id": "test_biz3"
+}

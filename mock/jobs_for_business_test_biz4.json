@@ -1,0 +1,63 @@
+{
+  "success": true,
+  "jobs_count": 1,
+  "jobs": [
+    {
+      "job_id": "214560",
+      "name": "Cabinet Painting",
+      "description": "Cabinet refinishing - currently dark stain, want painted white.",
+      "subcategory": "Cabinet Painting",
+      "size": "large",
+      "suburb": "Balgowlah",
+      "state": "NSW",
+      "postcode": "2093",
+      "distance_km": 2.3,
+      "budget_min": 1403,
+      "budget_max": 2257,
+      "budget_display": "$1,403 - $2,257",
+      "timeline": "This week",
+      "availability": "Flexible",
+      "posted_ago": "3 hours ago",
+      "posted_at": "2026-02-04T21:23:19.294Z",
+      "customer": {
+        "name": "Michael Chen",
+        "first_name": "Michael",
+        "phone": "0489 456 789",
+        "verified": true,
+        "member_since": "2024",
+        "jobs_posted": 14,
+        "rating": 4.2,
+        "contact_preference": "phone"
+      },
+      "attachments": [],
+      "lead_score": 93,
+      "urgency": "low",
+      "intent": "ready_to_hire",
+      "status": "new",
+      "our_response": null,
+      "conversation": [],
+      "outcome": null,
+      "agent_review": {
+        "score": 9,
+        "recommendation": "send",
+        "reasoning": "High lead score of 93/100 for a cabinet painting job that's local, within budget, and from a verified customer with good history. This looks like an ideal project for a painter.",
+        "draft_message": "Hi Michael, I saw your cabinet painting project in Balgowlah and I specialize in transforming dark-stained cabinets to fresh white finishes. I'd love to discuss how we can refresh your space this week and give you a professional result.",
+        "green_flags": [
+          "Local job (2.3km away)",
+          "High lead score (93/100)",
+          "Customer is verified",
+          "Budget matches typical cabinet painting range",
+          "Ready to hire this week"
+        ],
+        "red_flags": [
+          "Low urgency might mean multiple quotes being sought"
+        ],
+        "suggested_price_range": {
+          "min": 1500,
+          "max": 2400
+        }
+      }
+    }
+  ],
+  "business_id": "test_biz4"
+}

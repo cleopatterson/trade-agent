@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "jobs_count": 1,
+  "jobs": [
+    {
+      "job_id": "90000",
+      "name": "Kitchen and bathroom walls need repainting. Some...",
+      "description": "Kitchen and bathroom walls need repainting. Some prep work needed.",
+      "subcategory": "Interior House Painting",
+      "size": "large",
+      "suburb": "Dee Why",
+      "state": "NSW",
+      "postcode": "2099",
+      "distance_km": 9.1,
+      "budget_min": null,
+      "budget_max": null,
+      "budget_display": "No budget set",
+      "timeline": "This month",
+      "availability": "Mornings",
+      "posted_ago": "1 days ago",
+      "posted_at": "2026-02-02T15:45:30.321Z",
+      "customer": {
+        "name": "Chris Chen",
+        "first_name": "Chris",
+        "phone": "0431 490 903",
+        "verified": true,
+        "member_since": "2024",
+        "jobs_posted": 10,
+        "contact_preference": "either"
+      },
+      "attachments": [],
+      "lead_score": 80,
+      "urgency": "normal",
+      "intent": "ready_to_hire",
+      "status": "skipped",
+      "our_response": null,
+      "conversation": [],
+      "outcome": null,
+      "skip_reason": "Skipped by tradie - no reason given"
+    }
+  ],
+  "business_id": "biz_1770187530071"
+}

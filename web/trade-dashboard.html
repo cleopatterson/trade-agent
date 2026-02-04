@@ -1150,6 +1150,264 @@
         display: none; /* Hide page title on mobile to save space */
       }
     }
+
+    /* ===== NOTIFICATION CARDS ===== */
+    .notification-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      .notification-container {
+        bottom: 16px;
+        right: 16px;
+        left: 16px;
+        max-width: calc(100% - 32px);
+      }
+    }
+
+    .notification-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      margin-bottom: 12px;
+    }
+
+    .notification-card.hiding {
+      animation: slideOut 0.3s ease-in forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(120%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(120%);
+        opacity: 0;
+      }
+    }
+
+    .notification-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .notification-score {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .notification-score.high { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .notification-score.medium { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .notification-score.low { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+    .notification-title-section {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .notification-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .notification-label.recommend { color: #22c55e; }
+    .notification-label.skip { color: #f97316; }
+
+    .notification-job-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: #1a1a1a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .notification-close {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: #f5f5f5;
+      color: #666;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .notification-close:hover {
+      background: #e5e5e5;
+    }
+
+    .notification-body {
+      padding: 14px 16px;
+    }
+
+    .notification-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .notification-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .notification-reasoning {
+      font-size: 13px;
+      color: #444;
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .notification-flags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .notification-flag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
+    .notification-flag.green {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .notification-flag.red {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .notification-draft {
+      background: #f8f9fa;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #333;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .notification-draft-label {
+      font-size: 11px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .notification-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 14px;
+    }
+
+    .notification-actions button {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .notification-btn-approve {
+      background: var(--accent);
+      color: white;
+    }
+
+    .notification-btn-approve:hover {
+      background: #0052a3;
+    }
+
+    .notification-btn-skip {
+      background: #f5f5f5;
+      color: #666;
+      border: 1px solid #e0e0e0;
+    }
+
+    .notification-btn-skip:hover {
+      background: #e8e8e8;
+    }
+
+    .notification-btn-chat {
+      background: transparent;
+      color: var(--accent);
+      flex: 0;
+      padding: 10px 12px;
+    }
+
+    .notification-btn-chat:hover {
+      background: #f0f7ff;
+    }
+
+    /* Reviewing state */
+    .notification-reviewing {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: #f8f9fa;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .notification-reviewing i {
+      color: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -1400,29 +1658,25 @@
 
       <!-- PAGE: Jobs -->
       <div class="page" id="page-jobs">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <div>
-            <span id="jobsCountBadge" style="background: var(--accent); color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">0</span>
-            <span style="margin-left: 8px; color: #666;">job leads</span>
-          </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <select id="jobsFilter" onchange="renderJobsList()" style="padding: 6px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 8px;">
+          <!-- Left: Count + Filter dropdown -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span id="jobsCountBadge" style="background: var(--accent); color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; font-weight: 600; min-width: 24px; text-align: center;">0</span>
+            <select id="jobsFilter" onchange="renderJobsList()" style="padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 14px; font-weight: 500;">
               <option value="leads">New Leads</option>
               <option value="quoting">Quoting</option>
               <option value="booked">Booked</option>
               <option value="skipped">Skipped</option>
               <option value="all">All Jobs</option>
             </select>
-            <select id="jobsSort" onchange="renderJobsList()" style="padding: 6px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;">
-              <option value="newest">Newest First</option>
-              <option value="score">Lead Score</option>
-              <option value="distance">Closest</option>
-            </select>
-            <button class="btn btn-secondary" onclick="refreshJobs()" title="Load more jobs">
+          </div>
+          <!-- Right: Icon buttons -->
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-secondary" onclick="refreshJobs()" title="Load more jobs" style="padding: 8px 14px;">
               <i class="fas fa-sync"></i>
             </button>
-            <button class="btn btn-primary" onclick="askAgentToSummarize()">
-              <i class="fas fa-robot"></i> Summarize
+            <button class="btn btn-secondary" onclick="simulateNewLead()" title="Simulate new lead" style="padding: 8px 14px; background: #fff8f0; border-color: #f97316; color: #f97316;">
+              <i class="fas fa-bolt"></i>
             </button>
           </div>
         </div>
@@ -1732,6 +1986,9 @@
     </div>
   </div>
 
+  <!-- Notification Container -->
+  <div class="notification-container" id="notificationContainer"></div>
+
   <script>
     // ===== STATE =====
     const API_URL = window.location.origin;
@@ -1742,10 +1999,277 @@
     let debugLog = [];
     let memory = [];
 
+    // ===== SSE CONNECTION =====
+    let sseConnection = null;
+    let notificationQueue = [];
+    let isShowingNotification = false;
+
+    function connectSSE(businessId) {
+      // Close existing connection
+      if (sseConnection) {
+        sseConnection.close();
+        sseConnection = null;
+      }
+
+      if (!businessId) return;
+
+      const url = `${API_URL}/events/${businessId}`;
+      console.log('[SSE] Connecting to', url);
+      addDebugLog(`SSE connecting to ${businessId}`);
+
+      sseConnection = new EventSource(url);
+
+      sseConnection.addEventListener('connected', (e) => {
+        const data = JSON.parse(e.data);
+        console.log('[SSE] Connected:', data);
+        addDebugLog(`SSE connected: ${data.clientId?.slice(0, 8)}`, 'success');
+      });
+
+      sseConnection.addEventListener('new_job', (e) => {
+        const data = JSON.parse(e.data);
+        console.log('[SSE] New job:', data);
+        addDebugLog(`New job: ${data.name} — reviewing...`, 'info');
+        // Could show a subtle "reviewing..." indicator here
+      });
+
+      sseConnection.addEventListener('job_reviewed', (e) => {
+        const data = JSON.parse(e.data);
+        console.log('[SSE] Job reviewed:', data);
+        addDebugLog(`Job reviewed: score=${data.review?.score} rec=${data.review?.recommendation}`, 'success');
+        queueNotification(data);
+        loadJobs(); // Refresh jobs list
+      });
+
+      sseConnection.addEventListener('job_updated', (e) => {
+        const data = JSON.parse(e.data);
+        console.log('[SSE] Job updated:', data);
+        addDebugLog(`Job ${data.job_id} → ${data.status}`, 'info');
+        loadJobs(); // Refresh jobs list
+      });
+
+      sseConnection.addEventListener('review_failed', (e) => {
+        const data = JSON.parse(e.data);
+        console.warn('[SSE] Review failed:', data);
+        addDebugLog(`Review failed for ${data.job_id}: ${data.error}`, 'error');
+      });
+
+      sseConnection.onerror = (err) => {
+        console.error('[SSE] Error:', err);
+        addDebugLog('SSE connection error', 'error');
+      };
+    }
+
+    function disconnectSSE() {
+      if (sseConnection) {
+        sseConnection.close();
+        sseConnection = null;
+        console.log('[SSE] Disconnected');
+      }
+    }
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', disconnectSSE);
+
+    // ===== NOTIFICATION SYSTEM =====
+    function queueNotification(data) {
+      notificationQueue.push(data);
+      if (!isShowingNotification) {
+        showNextNotification();
+      }
+    }
+
+    function showNextNotification() {
+      if (notificationQueue.length === 0) {
+        isShowingNotification = false;
+        return;
+      }
+
+      isShowingNotification = true;
+      const data = notificationQueue.shift();
+      renderNotificationCard(data);
+    }
+
+    function renderNotificationCard(data) {
+      const container = document.getElementById('notificationContainer');
+      const { job, review, job_id } = data;
+
+      if (!job || !review) {
+        showNextNotification();
+        return;
+      }
+
+      const score = review.score || 5;
+      const scoreClass = score >= 7 ? 'high' : score >= 4 ? 'medium' : 'low';
+      const labelClass = review.recommendation === 'send' ? 'recommend' : 'skip';
+      const labelText = review.recommendation === 'send' ? 'RECOMMENDED' : 'SKIP SUGGESTED';
+
+      const greenFlags = (review.green_flags || []).map(f =>
+        `<span class="notification-flag green">${escapeHtml(f)}</span>`
+      ).join('');
+
+      const redFlags = (review.red_flags || []).map(f =>
+        `<span class="notification-flag red">${escapeHtml(f)}</span>`
+      ).join('');
+
+      const priceRange = review.suggested_price_range
+        ? `$${review.suggested_price_range.min?.toLocaleString()} - $${review.suggested_price_range.max?.toLocaleString()}`
+        : '';
+
+      const cardHtml = `
+        <div class="notification-card" id="notification-${job_id}">
+          <div class="notification-header">
+            <div class="notification-score ${scoreClass}">${score}</div>
+            <div class="notification-title-section">
+              <div class="notification-label ${labelClass}">${labelText}</div>
+              <div class="notification-job-title">${escapeHtml(job.name || 'New Job')}</div>
+            </div>
+            <button class="notification-close" onclick="dismissNotification('${job_id}')">&times;</button>
+          </div>
+          <div class="notification-body">
+            <div class="notification-meta">
+              <span><i class="fas fa-user"></i> ${escapeHtml(job.customer?.name || 'Customer')}</span>
+              <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(job.suburb || '')}${job.distance_km ? `, ${job.distance_km}km` : ''}</span>
+              <span><i class="fas fa-dollar-sign"></i> ${escapeHtml(job.budget_display || 'No budget')}</span>
+              ${priceRange ? `<span><i class="fas fa-tag"></i> Est: ${priceRange}</span>` : ''}
+            </div>
+            <div class="notification-reasoning">${escapeHtml(review.reasoning || '')}</div>
+            <div class="notification-flags">
+              ${greenFlags}
+              ${redFlags}
+            </div>
+            <div class="notification-draft">
+              <div class="notification-draft-label">Draft Message</div>
+              ${escapeHtml(review.draft_message || 'Hi, I\'d love to help with your job.')}
+            </div>
+          </div>
+          <div class="notification-actions">
+            <button class="notification-btn-approve" onclick="approveFromNotification('${job_id}')">
+              <i class="fas fa-check"></i> Approve & Send
+            </button>
+            <button class="notification-btn-skip" onclick="skipFromNotification('${job_id}')">
+              <i class="fas fa-times"></i> Skip
+            </button>
+            <button class="notification-btn-chat" onclick="openJobFromNotification('${job_id}')" title="Open in Chat">
+              <i class="fas fa-comment"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      container.insertAdjacentHTML('beforeend', cardHtml);
+
+      // Play a subtle notification sound (optional)
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU4GAAB+f35/fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+fn5+');
+        audio.volume = 0.3;
+        audio.play().catch(() => {});
+      } catch {}
+    }
+
+    async function approveFromNotification(jobId) {
+      const card = document.getElementById(`notification-${jobId}`);
+      if (!card) return;
+
+      // Get the draft message from the card
+      const draftEl = card.querySelector('.notification-draft');
+      const draftMessage = draftEl ? draftEl.textContent.replace('Draft Message', '').trim() : '';
+
+      // Disable buttons
+      card.querySelectorAll('button').forEach(btn => btn.disabled = true);
+      card.querySelector('.notification-btn-approve').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+      try {
+        const response = await fetch(`${API_URL}/jobs/${currentBusinessId}/${jobId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ draft_message: draftMessage })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          addDebugLog(`Approved job ${jobId} — message sent`, 'success');
+        } else {
+          addDebugLog(`Approve failed: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        addDebugLog(`Approve error: ${err.message}`, 'error');
+      }
+
+      dismissNotification(jobId);
+    }
+
+    async function skipFromNotification(jobId) {
+      const card = document.getElementById(`notification-${jobId}`);
+      if (!card) return;
+
+      // Disable buttons
+      card.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+      try {
+        const response = await fetch(`${API_URL}/jobs/${currentBusinessId}/${jobId}/skip`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Skipped from notification' })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          addDebugLog(`Skipped job ${jobId}`, 'info');
+        }
+      } catch (err) {
+        addDebugLog(`Skip error: ${err.message}`, 'error');
+      }
+
+      dismissNotification(jobId);
+    }
+
+    function openJobFromNotification(jobId) {
+      dismissNotification(jobId);
+      openJob(jobId);
+    }
+
+    function dismissNotification(jobId) {
+      const card = document.getElementById(`notification-${jobId}`);
+      if (card) {
+        card.classList.add('hiding');
+        setTimeout(() => {
+          card.remove();
+          showNextNotification();
+        }, 300);
+      } else {
+        showNextNotification();
+      }
+    }
+
+    // Simulate new lead button handler
+    async function simulateNewLead() {
+      if (!currentBusinessId) {
+        alert('Please select a business first');
+        return;
+      }
+
+      addDebugLog('Simulating incoming lead...', 'info');
+
+      try {
+        const response = await fetch(`${API_URL}/jobs/${currentBusinessId}/incoming`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          addDebugLog(`Lead ${data.job_id} created — review in progress`, 'success');
+        } else {
+          addDebugLog(`Failed to create lead: ${data.error}`, 'error');
+        }
+      } catch (err) {
+        addDebugLog(`Simulate error: ${err.message}`, 'error');
+      }
+    }
+
     // ===== TTS / VOICE =====
-    const DEFAULT_ELEVENLABS_KEY = ''; // Set via localStorage or prompt
-    const TTS_VOICE_ID = localStorage.getItem('elevenlabs_voice_id') || 'IKne3meq5aSn9XLyUdCD'; // Charlie - Australian male
-    const TTS_MODEL = 'eleven_multilingual_v2';
+    // TTS is proxied through the server — no client-side API key needed
     let voiceEnabled = localStorage.getItem('voice_enabled') === 'true';
     let audioQueue = [];
     let isPlayingAudio = false;
@@ -1765,17 +2289,6 @@
       }
 
       if (!voiceEnabled) {
-        let apiKey = localStorage.getItem('elevenlabs_api_key');
-        if (!apiKey) {
-          // Use embedded default; prompt only if no default
-          if (DEFAULT_ELEVENLABS_KEY) {
-            apiKey = DEFAULT_ELEVENLABS_KEY;
-          } else {
-            apiKey = prompt('Enter your ElevenLabs API key:');
-            if (!apiKey) return;
-          }
-          localStorage.setItem('elevenlabs_api_key', apiKey);
-        }
         // Unlock browser audio autoplay policy via user-gesture context
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         ctx.resume().then(() => ctx.close());
@@ -1808,8 +2321,7 @@
     }
 
     async function processTtsQueue() {
-      const apiKey = localStorage.getItem('elevenlabs_api_key');
-      if (!apiKey || !voiceEnabled) { ttsTextQueue = []; return; }
+      if (!voiceEnabled) { ttsTextQueue = []; return; }
       if (!ttsTextQueue.length) { ttsFetching = false; return; }
 
       ttsFetching = true;
@@ -1817,14 +2329,10 @@
 
       try {
         console.log('[TTS] requesting speech:', text.substring(0, 60));
-        const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${TTS_VOICE_ID}?output_format=mp3_44100_128`, {
+        const resp = await fetch(`${API_URL}/tts`, {
           method: 'POST',
-          headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text,
-            model_id: TTS_MODEL,
-            voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0, use_speaker_boost: true, speed: 1.0 }
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
         });
         if (!resp.ok) { console.warn('[TTS] API error:', resp.status); }
         else {
@@ -2363,6 +2871,9 @@ Actively develop strategy based on:
       currentBusinessId = businessId;
       saveState();
 
+      // Connect SSE for real-time notifications
+      connectSSE(businessId);
+
       try {
         if (startSession) {
           loadingText.textContent = 'Starting session...';
@@ -2638,6 +3149,9 @@ Actively develop strategy based on:
         const overlay = document.getElementById('loadingOverlay');
         overlay.classList.remove('active');
 
+        // Show typing indicator while waiting for welcome message
+        const welcomeTypingId = addTypingIndicator();
+
         // Ask AI to greet based on context — stream it
         const welcomeResponse = await fetch(`${API_URL}/assistant/message`, {
           method: 'POST',
@@ -2651,10 +3165,12 @@ Actively develop strategy based on:
 
         const contentType = welcomeResponse.headers.get('content-type') || '';
         if (contentType.includes('text/event-stream')) {
+          removeTypingIndicator(welcomeTypingId);
           await handleStreamingResponse(welcomeResponse);
         } else {
           // Fallback for non-streaming servers
           const welcomeData = await welcomeResponse.json();
+          removeTypingIndicator(welcomeTypingId);
           addMessage(welcomeData.response, 'assistant', welcomeData.tool_calls);
           await refreshAfterToolCalls(welcomeData.tool_calls);
         }
@@ -2717,6 +3233,9 @@ Actively develop strategy based on:
 
       addMessage(message, 'user');
 
+      // Show typing indicator immediately (before fetch round-trip)
+      const typingId = addTypingIndicator();
+
       try {
         addDebugLog(`Sending: "${message.substring(0, 50)}..."`);
 
@@ -2730,10 +3249,10 @@ Actively develop strategy based on:
 
         if (contentType.includes('text/event-stream')) {
           // ── SSE streaming path ──
+          removeTypingIndicator(typingId);
           await handleStreamingResponse(response);
         } else {
-          // ── Fallback: non-streaming JSON response (e.g., LangChain server on 8001) ──
-          const typingId = addTypingIndicator();
+          // ── Fallback: non-streaming JSON response ──
           const data = await response.json();
           removeTypingIndicator(typingId);
 
@@ -2767,8 +3286,12 @@ Actively develop strategy based on:
 
       const toolsZone = document.createElement('span');
       const textZone = document.createElement('span');
+      const thinkingDots = document.createElement('div');
+      thinkingDots.className = 'typing-indicator';
+      thinkingDots.innerHTML = '<span></span><span></span><span></span>';
 
       contentDiv.appendChild(toolsZone);
+      contentDiv.appendChild(thinkingDots);
       contentDiv.appendChild(textZone);
 
       msgDiv.innerHTML = '<div class="message-avatar baz"></div>';
@@ -2847,6 +3370,7 @@ Actively develop strategy based on:
           try { event = JSON.parse(line.slice(6)); } catch { continue; }
 
           if (event.type === 'text_delta') {
+            if (thinkingDots.parentNode) thinkingDots.remove();
             fullText += event.delta;
             if (!hitButtons) {
               if (fullText.includes('[[')) {
@@ -2863,6 +3387,7 @@ Actively develop strategy based on:
             scheduleFlush();
 
           } else if (event.type === 'tool_start') {
+            if (thinkingDots.parentNode) thinkingDots.remove();
             toolCalls.push(event.name);
             addDebugLog(`Tool: ${event.name}`, 'tool');
             const badge = document.createElement('span');
@@ -3033,6 +3558,17 @@ Actively develop strategy based on:
       links.forEach((link, idx) => {
         const linkHtml = `<a href="${link.url}" target="_blank" style="color: #0066cc;">${escapeHtml(link.text)}</a>`;
         html = html.replace(`__LINK_${idx}__`, linkHtml);
+      });
+
+      // Detect quote URLs and embed inline preview
+      const quoteUrlRegex = /\/quotes\/(Q-[A-Z0-9]+)/g;
+      html = html.replace(quoteUrlRegex, (match, quoteId) => {
+        return `<div class="quote-preview" style="margin: 12px 0; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+          <iframe src="${API_URL}/quotes/${quoteId}?embed=1" style="width: 100%; height: 500px; border: none; pointer-events: auto;"></iframe>
+          <div style="display: flex; gap: 8px; padding: 8px 12px; background: #f8f9fa; border-top: 1px solid #e0e0e0;">
+            <a href="${API_URL}/quotes/${quoteId}" target="_blank" style="flex: 1; text-align: center; padding: 8px; background: #2563eb; color: #fff; border-radius: 4px; text-decoration: none; font-size: 13px;"><i class="fas fa-print"></i> Open &amp; Print PDF</a>
+          </div>
+        </div>`;
       });
 
       // Headers
@@ -3360,7 +3896,7 @@ Actively develop strategy based on:
 
     function renderJobsList() {
       const container = document.getElementById('jobsList');
-      const sortBy = document.getElementById('jobsSort').value;
+      const sortBy = 'newest'; // Default sort
       const filterBy = document.getElementById('jobsFilter').value;
 
       // Filter jobs by status

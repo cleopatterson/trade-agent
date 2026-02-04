@@ -1,0 +1,50 @@
+{
+  "90002": {
+    "job_id": "90002",
+    "status": "in_conversation",
+    "messages": [
+      {
+        "sender": "customer",
+        "message": "Thanks for getting in touch! Can you give me a rough idea of pricing?",
+        "type": "response",
+        "timestamp": "2026-02-04T22:40:22.288Z"
+      },
+      {
+        "sender": "tradie",
+        "message": "$1,500 total for both rooms mate",
+        "type": "reply",
+        "timestamp": "2026-02-04T22:40:35.479Z"
+      },
+      {
+        "sender": "customer",
+        "message": "Thanks for getting in touch! Can you give me a rough idea of pricing?",
+        "type": "response",
+        "timestamp": "2026-02-04T22:40:35.480Z"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  },
+  "108769": {
+    "job_id": "108769",
+    "status": "in_conversation",
+    "messages": [
+      {
+        "sender": "tradie",
+        "message": "G'day Michael, I saw your cabinet painting project in Mosman. We specialize in transforming cabinets - I can get your bathroom vanity and kitchen cabinets looking fresh and white. Keen to chat about bringing your space to life?",
+        "type": "intro",
+        "timestamp": "2026-02-04T22:47:49.426Z"
+      },
+      {
+        "sender": "customer",
+        "message": "Thanks for getting in touch! Can you give me a rough idea of pricing?",
+        "type": "response",
+        "timestamp": "2026-02-04T22:47:49.429Z"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  }
+}

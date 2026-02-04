@@ -6,10 +6,10 @@ import { Agent, ProviderTransport } from "@mariozechner/pi-agent-core";
 import { getModel } from "@mariozechner/pi-ai";
 import { CONFIG } from "./config.js";
 import { createTools } from "./tools.js";
-import { buildStableContext, buildDynamicContext } from "./bootstrap.js";
+import { buildStableContext, buildDynamicContext, getProfileSettings } from "./bootstrap.js";
 
 // Same system prompt as Python version
-const TRADE_ASSISTANT_PROMPT_STATIC = `You are a trade assistant for ServiceSeeking, helping tradies win more jobs.
+export const TRADE_ASSISTANT_PROMPT_STATIC = `You are a trade assistant for ServiceSeeking, helping tradies win more jobs.
 
 ## Persona
 If SOUL.md is present, embody its values and tone. If ASSISTANT.md is present, use that identity.
@@ -132,12 +132,12 @@ export function createAgentSession(businessId: string): AgentSession {
   const model = getModel("anthropic", CONFIG.model);
   const tools = createTools(businessId);
 
-  // Build system prompt with context
+  // Build system prompt with STABLE context only (for caching)
+  // Dynamic context is injected per-turn via message prefix
   const stableContext = buildStableContext(businessId);
-  const dynamicContext = buildDynamicContext(businessId);
   let systemPrompt = TRADE_ASSISTANT_PROMPT_STATIC;
   if (stableContext) systemPrompt += `\n\n---\n\n${stableContext}`;
-  if (dynamicContext) systemPrompt += `\n\n---\n\n${dynamicContext}`;
+  if (CONFIG.brevityMode) systemPrompt += BREVITY_ADDENDUM;
 
   const transport = new ProviderTransport({
     getApiKey: (provider: string) => {
@@ -181,18 +181,32 @@ export async function chatStream(
 ): Promise<string> {
   const t0 = performance.now();
 
-  // Refresh dynamic context each turn
-  const dynamicContext = buildDynamicContext(session.businessId);
+  // System prompt stays STABLE for caching (only update if stableContext changed)
+  // Dynamic context is prepended to user message instead
   const stableContext = buildStableContext(session.businessId);
   let systemPrompt = TRADE_ASSISTANT_PROMPT_STATIC;
   if (stableContext) systemPrompt += `\n\n---\n\n${stableContext}`;
-  if (dynamicContext) systemPrompt += `\n\n---\n\n${dynamicContext}`;
   if (CONFIG.brevityMode) systemPrompt += BREVITY_ADDENDUM;
   session.agent.setSystemPrompt(systemPrompt);
 
-  // Apply maxTokens to model each turn (supports runtime changes)
+  // Prepend dynamic context to user message (changes each turn, not cached)
+  const dynamicContext = buildDynamicContext(session.businessId);
+  const messageWithContext = dynamicContext
+    ? `[Current Context]\n${dynamicContext}\n\n[User Message]\n${message}`
+    : message;
+
+  // Per-profile maxTokens (from ASSISTANT.md "Response Length") or global default
+  const profileSettings = getProfileSettings(session.businessId);
+  const baseMaxTokens = profileSettings.maxTokens ?? CONFIG.maxTokens;
+
+  // Boost for content-generation requests
+  const needsLongResponse = LONG_CONTENT_PATTERNS.test(message);
+  const turnMaxTokens = needsLongResponse ? Math.max(baseMaxTokens, LONG_CONTENT_TOKENS) : baseMaxTokens;
+  if (needsLongResponse) console.log(`  [Tokens] boosted to ${turnMaxTokens} for content generation`);
+  if (profileSettings.maxTokens) console.log(`  [Tokens] profile override: ${profileSettings.maxTokens}`);
+
   const baseModel = getModel("anthropic", CONFIG.model);
-  session.agent.setModel({ ...baseModel, maxTokens: CONFIG.maxTokens });
+  session.agent.setModel({ ...baseModel, maxTokens: turnMaxTokens });
 
   console.log(`  [Timing] context refresh: ${((performance.now() - t0) / 1000).toFixed(2)}s`);
 
@@ -220,6 +234,16 @@ export async function chatStream(
         session.totalLlmTime += elapsed;
         session.turnCount++;
         console.log(`  [Timing] agent turn: ${elapsed.toFixed(2)}s`);
+
+        // Log cache stats if available
+        const agentMessages = (event as any).messages || [];
+        for (const msg of agentMessages) {
+          if (msg.usage) {
+            const u = msg.usage;
+            const cacheHitRate = u.cacheRead > 0 ? Math.round(u.cacheRead / (u.input + u.cacheRead) * 100) : 0;
+            console.log(`  [Cache] in=${u.input} out=${u.output} read=${u.cacheRead || 0} write=${u.cacheWrite || 0} (${cacheHitRate}% hit)`);
+          }
+        }
 
         unsubscribe();
 
@@ -259,7 +283,7 @@ export async function chatStream(
       }
     });
 
-    session.agent.prompt(message).catch((err) => {
+    session.agent.prompt(messageWithContext).catch((err) => {
       unsubscribe();
       console.error(`  [Error] agent prompt failed: ${err.message}`);
       const errText = `Error: ${err.message}`;
@@ -269,20 +293,39 @@ export async function chatStream(
   });
 }
 
+// Detect messages that need longer responses (content generation, descriptions, etc.)
+const LONG_CONTENT_PATTERNS = /\b(write|draft|create|generate|compose|update|rewrite|improve|new description|new bio|about us|about me|logo|quote message|long|detailed|full)\b/i;
+const LONG_CONTENT_TOKENS = 1024;
+
 export async function chat(session: AgentSession, message: string): Promise<string> {
   const t0 = performance.now();
 
-  // Refresh dynamic context each turn
-  const dynamicContext = buildDynamicContext(session.businessId);
+  // System prompt stays STABLE for caching (only update if stableContext changed)
+  // Dynamic context is prepended to user message instead
   const stableContext = buildStableContext(session.businessId);
   let systemPrompt = TRADE_ASSISTANT_PROMPT_STATIC;
   if (stableContext) systemPrompt += `\n\n---\n\n${stableContext}`;
-  if (dynamicContext) systemPrompt += `\n\n---\n\n${dynamicContext}`;
   if (CONFIG.brevityMode) systemPrompt += BREVITY_ADDENDUM;
   session.agent.setSystemPrompt(systemPrompt);
 
+  // Prepend dynamic context to user message (changes each turn, not cached)
+  const dynamicContext = buildDynamicContext(session.businessId);
+  const messageWithContext = dynamicContext
+    ? `[Current Context]\n${dynamicContext}\n\n[User Message]\n${message}`
+    : message;
+
+  // Per-profile maxTokens or global default
+  const profileSettings = getProfileSettings(session.businessId);
+  const baseMaxTokens = profileSettings.maxTokens ?? CONFIG.maxTokens;
+
+  // Boost for content-generation requests
+  const needsLongResponse = LONG_CONTENT_PATTERNS.test(message);
+  const turnMaxTokens = needsLongResponse ? Math.max(baseMaxTokens, LONG_CONTENT_TOKENS) : baseMaxTokens;
+  if (needsLongResponse) console.log(`  [Tokens] boosted to ${turnMaxTokens} for content generation`);
+  if (profileSettings.maxTokens) console.log(`  [Tokens] profile override: ${profileSettings.maxTokens}`);
+
   const baseModel = getModel("anthropic", CONFIG.model);
-  session.agent.setModel({ ...baseModel, maxTokens: CONFIG.maxTokens });
+  session.agent.setModel({ ...baseModel, maxTokens: turnMaxTokens });
 
   console.log(`  [Timing] context refresh: ${((performance.now() - t0) / 1000).toFixed(2)}s`);
 
@@ -305,6 +348,16 @@ export async function chat(session: AgentSession, message: string): Promise<stri
         session.totalLlmTime += elapsed;
         session.turnCount++;
         console.log(`  [Timing] agent turn: ${elapsed.toFixed(2)}s`);
+
+        // Log cache stats if available
+        const chatMessages = event.messages || [];
+        for (const msg of chatMessages as any[]) {
+          if (msg.usage) {
+            const u = msg.usage;
+            const cacheHitRate = u.cacheRead > 0 ? Math.round(u.cacheRead / (u.input + u.cacheRead) * 100) : 0;
+            console.log(`  [Cache] in=${u.input} out=${u.output} read=${u.cacheRead || 0} write=${u.cacheWrite || 0} (${cacheHitRate}% hit)`);
+          }
+        }
 
         unsubscribe();
 
@@ -335,7 +388,7 @@ export async function chat(session: AgentSession, message: string): Promise<stri
     });
 
     // Fire and forget - events will resolve the promise
-    session.agent.prompt(message).catch((err) => {
+    session.agent.prompt(messageWithContext).catch((err) => {
       unsubscribe();
       console.error(`  [Error] agent prompt failed: ${err.message}`);
       resolve(`Error: ${err.message}`);

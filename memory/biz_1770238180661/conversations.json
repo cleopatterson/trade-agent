@@ -1,0 +1,38 @@
+{
+  "90000": {
+    "job_id": "90000",
+    "status": "new",
+    "messages": [
+      {
+        "sender": "customer",
+        "message": "Thanks Mantoolsute! I'll take a look at the quote and get back to you.",
+        "type": "response",
+        "timestamp": "2026-02-04T20:51:13.656Z"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  },
+  "90001": {
+    "job_id": "90001",
+    "status": "in_conversation",
+    "messages": [
+      {
+        "sender": "tradie",
+        "message": "Hi Tom,\n\nHappy to help with your living and dining rooms. I can do the high ceilings, feature wall and prep for $500 - working weekends to suit you.\n\nI'm local in Hallett Cove, fully insured with 30+ years experience. Available to start when it suits.\n\nLet me know if you'd like to go ahead!\n\nCheers,\nDavid\n\nQuote #Q-ML8I9TJF: $550.00 inc GST",
+        "type": "quote",
+        "timestamp": "2026-02-04T20:54:57.012Z"
+      },
+      {
+        "sender": "customer",
+        "message": "Thanks Mantoolsute! I'll take a look at the quote and get back to you.",
+        "type": "response",
+        "timestamp": "2026-02-04T20:54:57.013Z"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  }
+}

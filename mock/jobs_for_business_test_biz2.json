@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "jobs_count": 1,
+  "jobs": [
+    {
+      "job_id": "721248",
+      "name": "Cabinet Painting",
+      "description": "Cabinet refinishing - currently dark stain, want painted white.",
+      "subcategory": "Cabinet Painting",
+      "size": "small",
+      "suburb": "Balgowlah",
+      "state": "NSW",
+      "postcode": "2093",
+      "distance_km": 2.3,
+      "budget_min": null,
+      "budget_max": null,
+      "budget_display": "No budget set",
+      "timeline": "This week",
+      "availability": "Weekdays (Business hours)",
+      "posted_ago": "3 hours ago",
+      "posted_at": "2026-02-04T21:19:31.309Z",
+      "customer": {
+        "name": "James Robertson",
+        "first_name": "James",
+        "phone": "0467 234 567",
+        "verified": true,
+        "member_since": "2025",
+        "jobs_posted": 4,
+        "rating": 4.1,
+        "contact_preference": "either"
+      },
+      "attachments": [],
+      "lead_score": 72,
+      "urgency": "low",
+      "intent": "researching",
+      "status": "new",
+      "our_response": null,
+      "conversation": [],
+      "outcome": null
+    }
+  ],
+  "business_id": "test_biz2"
+}

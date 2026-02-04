@@ -12,6 +12,7 @@ import {
   addMessageToConversation,
   updateMemory,
   updateBusinessField,
+  updateBusinessSection,
   type MockJob,
 } from "./bootstrap.js";
 import fs from "fs";
@@ -235,55 +236,154 @@ export function createTools(businessId: string): AgentTool<any>[] {
       },
     },
 
-    // 7. submit_quote
+    // 7. submit_quote — send a previously generated quote to the customer
     {
       name: "submit_quote",
-      label: "Submit Quote",
-      description: "Submit a quote for a job.",
+      label: "Send Quote",
+      description: "Send a previously generated quote to the customer. Call generate_quote_pdf first to create and preview the quote, then call this to actually send it. The tradie must approve the quote before sending.",
       parameters: Type.Object({
-        job_id: Type.String({ description: "The job to quote on" }),
-        amount: Type.Number({ description: "Quote amount in dollars" }),
-        message: Type.String({ description: "Message with the quote" }),
+        job_id: Type.String({ description: "The job the quote is for" }),
+        quote_id: Type.String({ description: "The quote ID from generate_quote_pdf (e.g. Q-ML8HNZEN)" }),
+        message: Type.Optional(Type.String({ description: "Personal message to send with the quote" })),
       }),
       execute: async (_id: string, params: any) => {
         const job = getJobById(businessId, params.job_id);
         if (!job) return errorResult(`Job ${params.job_id} not found`);
-        if (["new", "leads"].includes(job.status || "")) {
-          updateJobInFile(businessId, params.job_id, { status: "quoting" });
-        }
-        updateMemory(businessId, "Quote Submitted", `${job.name} (${job.suburb}) - $${params.amount} to ${job.customer?.name}`);
+
+        // Look up the stored quote for the total
+        const { getStoredQuote } = await import("./index.js");
+        const storedQuote = getStoredQuote(params.quote_id);
+        const total = storedQuote?.total || 0;
+        const customer = job.customer || {};
+        const firstName = customer.first_name || (customer.name || "Customer").split(" ")[0];
+
+        // Read business name
+        let bizName = "Business";
+        try {
+          const biz = fs.readFileSync(path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md"), "utf-8");
+          bizName = biz.match(/\*\*Business Name:\*\*\s*(.+)/)?.[1]?.trim() || bizName;
+        } catch { /* ok */ }
+
+        const personalMsg = params.message || `Hi ${firstName}, here's my quote for ${job.name || 'your job'}. Let me know if you have any questions.`;
+        const fullMessage = `${personalMsg}\n\nQuote #${params.quote_id}: $${total.toFixed(2)} inc GST`;
+        addMessageToConversation(businessId, params.job_id, "tradie", fullMessage, "quote");
+
+        updateJobInFile(businessId, params.job_id, {
+          status: "quoted",
+          our_response: { quote_id: params.quote_id, amount: total, sent_at: new Date().toISOString() },
+        });
+
+        updateMemory(businessId, "Quote Sent", `${job.name} (${job.suburb}) - $${total.toFixed(2)} to ${firstName} [${params.quote_id}]`);
+
+        // Simulate customer acknowledgment
+        const ack = `Thanks ${bizName.split(" ")[0]}! I'll take a look at the quote and get back to you.`;
+        addMessageToConversation(businessId, params.job_id, "customer", ack, "response");
+
         return result({
-          success: true, action: "quote_submitted", job_id: params.job_id, job_name: job.name,
-          amount: params.amount, customer_name: job.customer?.name, message_sent: params.message,
-          follow_up: `Is $${params.amount} your standard rate for ${job.subcategory} (${job.size} size)?`,
+          success: true,
+          action: "quote_sent",
+          quote_id: params.quote_id,
+          job_id: params.job_id,
+          job_name: job.name,
+          total,
+          customer_name: customer.name || firstName,
+          message_sent: fullMessage,
+          customer_response: { from: firstName, message: ack },
+          message: `Quote ${params.quote_id} sent to ${firstName}: $${total.toFixed(2)} inc GST`,
         });
       },
     },
 
-    // 8. generate_quote_pdf (simplified - return data only)
+    // 8. generate_quote_pdf — preview only, does NOT send
     {
       name: "generate_quote_pdf",
-      label: "Generate Quote PDF",
-      description: "Generate a professional PDF quote (returns data, no actual PDF in TS version).",
+      label: "Generate Quote",
+      description: "Generate a professional quote for PREVIEW. Creates a branded, printable quote page with business logo and colors. Does NOT send it — show the quote URL to the tradie first so they can review it, then call submit_quote to send. Line items should each have: description, amount, and optionally quantity and unit.",
       parameters: Type.Object({
         job_id: Type.String({ description: "The job to generate a quote for" }),
-        line_items: Type.String({ description: "JSON string of line items" }),
-        include_gst: Type.Optional(Type.Boolean({ description: "Whether to add GST" })),
+        line_items: Type.String({ description: 'JSON array of items, e.g. [{"description":"Interior painting - 3 rooms","amount":1800},{"description":"Ceiling repairs","quantity":2,"unit":"sqm","amount":350}]' }),
+        include_gst: Type.Optional(Type.Boolean({ description: "Whether to add 10% GST (default true)" })),
+        notes: Type.Optional(Type.String({ description: "Notes shown ON the quote page (e.g. payment terms, inclusions, warranty)" })),
+        valid_days: Type.Optional(Type.Number({ description: "Quote validity in days (default 14)" })),
       }),
       execute: async (_id: string, params: any) => {
         const job = getJobById(businessId, params.job_id);
         if (!job) return errorResult(`Job ${params.job_id} not found`);
-        let items;
+        let items: { description: string; quantity?: number; unit?: string; amount: number }[];
         try { items = JSON.parse(params.line_items); } catch { return errorResult("Invalid line_items JSON"); }
 
-        const subtotal = items.reduce((sum: number, i: { amount: number }) => sum + (i.amount || 0), 0);
-        const gst = (params.include_gst !== false) ? subtotal * 0.1 : 0;
+        const subtotal = items.reduce((sum, i) => sum + (i.amount || 0), 0);
+        const includeGst = params.include_gst !== false;
+        const gst = includeGst ? subtotal * 0.1 : 0;
         const total = subtotal + gst;
 
+        // Read business details from BUSINESS.md
+        const bizPath = path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md");
+        let bizName = "Business", bizPhone = "", bizEmail = "", bizAbn = "";
+        let brandColor = "", quoteTheme = "modern", bizLogo = "";
+        const parseMdField = (text: string, field: string): string => {
+          const m = text.match(new RegExp(`\\*\\*${field}:\\*\\*\\s*(.+)`));
+          const val = m?.[1]?.trim() || "";
+          if (!val || val.startsWith("*") || val.startsWith("-")) return "";
+          return val;
+        };
+        try {
+          const biz = fs.readFileSync(bizPath, "utf-8");
+          bizName = parseMdField(biz, "Business Name") || bizName;
+          bizPhone = parseMdField(biz, "Phone");
+          bizEmail = parseMdField(biz, "Email");
+          bizAbn = parseMdField(biz, "ABN");
+          brandColor = parseMdField(biz, "Brand Color");
+          quoteTheme = parseMdField(biz, "Quote Style") || "modern";
+        } catch { /* ok */ }
+
+        // Read logo
+        try {
+          const logoPath = path.join(CONFIG.bootstrapDir, businessId, "logo.json");
+          const logoData = JSON.parse(fs.readFileSync(logoPath, "utf-8"));
+          bizLogo = logoData.url || "";
+        } catch { /* ok */ }
+
+        const customer = job.customer || {};
+        const firstName = customer.first_name || (customer.name || "Customer").split(" ")[0];
+
+        const quoteId = `Q-${Date.now().toString(36).toUpperCase()}`;
+        const { storeQuote } = await import("./index.js");
+        storeQuote({
+          id: quoteId,
+          businessId,
+          businessName: bizName,
+          businessPhone: bizPhone,
+          businessEmail: bizEmail,
+          businessAbn: bizAbn,
+          businessLogo: bizLogo,
+          brandColor: brandColor,
+          quoteTheme: quoteTheme,
+          customerName: customer.name || firstName,
+          jobName: job.name || "Job",
+          jobDescription: job.description || "",
+          suburb: job.suburb || "",
+          lineItems: items,
+          subtotal, gst, total, includeGst: includeGst,
+          notes: params.notes,
+          validDays: params.valid_days || 14,
+          createdAt: new Date().toISOString(),
+        });
+
+        const quoteUrl = `/quotes/${quoteId}`;
+
         return result({
-          success: true, quote_number: `Q${Date.now()}`, total, subtotal, gst,
-          line_items: items, message: `Quote generated: $${total} inc GST`,
-          note: "PDF generation not available in TypeScript benchmark version",
+          success: true,
+          quote_id: quoteId,
+          total,
+          subtotal,
+          gst,
+          line_items: items,
+          quote_url: quoteUrl,
+          customer_name: customer.name || firstName,
+          job_name: job.name,
+          message: `Quote ${quoteId} ready for review: $${total.toFixed(2)}${includeGst ? ' inc GST' : ''} for ${firstName}. Preview at ${quoteUrl}`,
+          next_step: "Show the quote to the tradie. If they approve, call submit_quote to send it.",
         });
       },
     },
@@ -316,7 +416,7 @@ export function createTools(businessId: string): AgentTool<any>[] {
         confidence: Type.Optional(Type.String({ description: "Low/Medium/High" })),
       }),
       execute: async (_id: string, params: any) => {
-        // Append pattern to quoting skill file
+        // Append pattern to quoting skill file (deduplicate by name)
         const skillDir = path.join(CONFIG.bootstrapDir, businessId, "skills", "quoting");
         fs.mkdirSync(skillDir, { recursive: true });
         const skillPath = path.join(skillDir, "SKILL.md");
@@ -328,6 +428,12 @@ export function createTools(businessId: string): AgentTool<any>[] {
         try { content = fs.readFileSync(skillPath, "utf-8"); } catch {
           content = "---\nname: quoting\ndescription: Learns and applies pricing patterns\nemoji: 💰\nmetadata:\n  always: true\n---\n\n# Learned Patterns\n";
         }
+
+        // Remove existing pattern with the same name (case-insensitive) before adding updated one
+        const patternHeader = `### Pattern: ${params.pattern_name}`;
+        const headerRegex = new RegExp(`\\n### Pattern: ${params.pattern_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n[\\s\\S]*?(?=\\n### |$)`, "i");
+        content = content.replace(headerRegex, "");
+
         content += entry;
         fs.writeFileSync(skillPath, content);
 
@@ -339,15 +445,119 @@ export function createTools(businessId: string): AgentTool<any>[] {
     {
       name: "remember_business_info",
       label: "Remember Business Info",
-      description: "Remember important info about the business.",
+      description: "Remember important info about the business. Routes to the correct file: assistant personality goes to ASSISTANT.md, communication/work style goes to SOUL.md, everything else to BUSINESS.md (in the right section).",
       parameters: Type.Object({
-        field: Type.String({ description: "The type of information" }),
+        field: Type.String({ description: "The type of information. Use exact field names: communication_style, work_style, messaging_style (→ SOUL.md) | assistant_name, vibe (→ ASSISTANT.md) | quote_style, materials, include_gst, estimate_style (→ Quoting Preferences) | working_days, typical_hours, current_workload (→ Availability) | preferred_job_size, red_flags, jobs_love, jobs_avoid (→ Job Preferences) | services, specialties (→ Services) | minimum, hourly_rate, day_rate (→ Pricing) | service_area, primary_suburbs (→ Service Areas)" }),
         value: Type.String({ description: "The value to remember" }),
       }),
       execute: async (_id: string, params: any) => {
-        updateBusinessField(businessId, params.field, params.value);
-        updateMemory(businessId, "Learned", `${params.field}: ${params.value}`);
-        return result({ success: true, message: `Remembered: ${params.field} = ${params.value}` });
+        const field = params.field.toLowerCase();
+        const value = params.value;
+
+        // ── Route to ASSISTANT.md ──
+        const assistantFields: Record<string, string> = {
+          assistant_name: "Name", assistant_emoji: "Emoji", vibe: "Vibe",
+          assistant_vibe: "Vibe", assistant_personality: "Vibe",
+          response_length: "Response Length",
+        };
+        if (assistantFields[field]) {
+          const mdField = assistantFields[field];
+          const filePath = path.join(CONFIG.bootstrapDir, businessId, "ASSISTANT.md");
+          try {
+            let content = fs.readFileSync(filePath, "utf-8");
+            const pattern = new RegExp(`(- \\*\\*${mdField}:\\*\\*).*`, "i");
+            if (pattern.test(content)) {
+              content = content.replace(pattern, `$1 ${value}`);
+            } else {
+              // Insert after header
+              content = content.replace(/(# ASSISTANT\.md[^\n]*\n[^\n]*\n)/, `$1\n- **${mdField}:** ${value}\n`);
+            }
+            fs.writeFileSync(filePath, content);
+          } catch { /* file missing, skip */ }
+          updateMemory(businessId, "Learned", `${params.field}: ${value}`);
+          return result({ success: true, message: `Updated ASSISTANT.md: ${mdField} = ${value}`, file: "ASSISTANT.md" });
+        }
+
+        // ── Route to SOUL.md ──
+        const soulFields = ["communication_style", "work_style", "personality", "soul", "how_to_work", "messaging_style", "lead_philosophy"];
+        if (soulFields.includes(field)) {
+          const filePath = path.join(CONFIG.bootstrapDir, businessId, "SOUL.md");
+          try {
+            let content = fs.readFileSync(filePath, "utf-8");
+            const sectionHeader = "## Learned Style";
+            const entry = `- **${params.field}:** ${value}\n`;
+
+            // Check if this field already exists — replace it instead of duplicating
+            const existingPattern = new RegExp(`- \\*\\*${params.field}:\\*\\*[^\\n]*\\n`, "i");
+            if (existingPattern.test(content)) {
+              content = content.replace(existingPattern, entry);
+            } else if (content.includes(sectionHeader)) {
+              const idx = content.indexOf(sectionHeader) + sectionHeader.length + 1;
+              content = content.slice(0, idx) + entry + content.slice(idx);
+            } else {
+              // Insert before the closing ---
+              const lastDash = content.lastIndexOf("---");
+              if (lastDash > 0) {
+                content = content.slice(0, lastDash) + `\n${sectionHeader}\n${entry}\n` + content.slice(lastDash);
+              } else {
+                content += `\n${sectionHeader}\n${entry}`;
+              }
+            }
+            fs.writeFileSync(filePath, content);
+          } catch { /* file missing, skip */ }
+          updateMemory(businessId, params.field, value);
+          return result({ success: true, message: `Updated SOUL.md: ${params.field}`, file: "SOUL.md" });
+        }
+
+        // ── Route to BUSINESS.md (correct section) ──
+        const sectionRoutes: Record<string, { section: string; mdField: string }> = {
+          // Pricing
+          pricing: { section: "Pricing", mdField: "Pricing" },
+          hourly_rate: { section: "Pricing", mdField: "Hourly Rate" },
+          day_rate: { section: "Pricing", mdField: "Day Rate" },
+          minimum: { section: "Pricing", mdField: "Minimum Job Value" },
+          minimum_job: { section: "Pricing", mdField: "Minimum Job Value" },
+          // Service Areas
+          service_area: { section: "Service Areas", mdField: "Service Area" },
+          max_travel: { section: "Service Areas", mdField: "Max Travel Distance" },
+          travel_fee: { section: "Service Areas", mdField: "Travel Fee Outside Primary" },
+          primary_suburbs: { section: "Service Areas", mdField: "Primary Suburbs" },
+          // Services
+          services: { section: "Services & Specialties", mdField: "Services" },
+          specialties: { section: "Services & Specialties", mdField: "Specialties" },
+          // Quoting
+          quote_style: { section: "Quoting Preferences", mdField: "Quote Format" },
+          quote_format: { section: "Quoting Preferences", mdField: "Quote Format" },
+          materials: { section: "Quoting Preferences", mdField: "Materials" },
+          materials_included: { section: "Quoting Preferences", mdField: "Materials" },
+          include_gst: { section: "Quoting Preferences", mdField: "Include GST" },
+          estimate_style: { section: "Quoting Preferences", mdField: "Estimate Style" },
+          // Availability
+          availability: { section: "Availability", mdField: "Working Days" },
+          working_days: { section: "Availability", mdField: "Working Days" },
+          typical_hours: { section: "Availability", mdField: "Typical Hours" },
+          current_workload: { section: "Availability", mdField: "Current Workload" },
+          busy_periods: { section: "Availability", mdField: "Busy Periods" },
+          // Job Preferences
+          job_preferences: { section: "Job Preferences", mdField: "Preferred Job Size" },
+          preferred_job_size: { section: "Job Preferences", mdField: "Preferred Job Size" },
+          jobs_love: { section: "Job Preferences", mdField: "Jobs You Love" },
+          jobs_avoid: { section: "Job Preferences", mdField: "Jobs You Avoid" },
+          red_flags: { section: "Job Preferences", mdField: "Red Flags You Watch For" },
+          // Branding
+          brand_color: { section: "Branding", mdField: "Brand Color" },
+          quote_theme: { section: "Branding", mdField: "Quote Style" },
+        };
+
+        const route = sectionRoutes[field];
+        if (route) {
+          updateBusinessSection(businessId, route.section, route.mdField, value);
+        } else {
+          // Default: update in Basics
+          updateBusinessField(businessId, params.field, value);
+        }
+        updateMemory(businessId, "Learned", `${params.field}: ${value}`);
+        return result({ success: true, message: `Remembered: ${params.field} = ${value}`, file: "BUSINESS.md", section: route?.section || "Basics" });
       },
     },
 

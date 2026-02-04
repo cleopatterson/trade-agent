@@ -1,0 +1,17 @@
+{
+  "536332": {
+    "job_id": "536332",
+    "status": "new",
+    "messages": [
+      {
+        "sender": "customer",
+        "message": "Thanks for getting in touch! Can you give me a rough idea of pricing?",
+        "type": "response",
+        "timestamp": "2026-02-04T21:17:55.320Z"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  }
+}

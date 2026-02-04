@@ -1,0 +1,17 @@
+{
+  "90002": {
+    "job_id": "90002",
+    "status": "new",
+    "messages": [
+      {
+        "sender": "customer",
+        "message": "Thanks High! I'll take a look at the quote and get back to you.",
+        "type": "response",
+        "timestamp": "2026-02-04T22:36:26.561Z"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  }
+}
