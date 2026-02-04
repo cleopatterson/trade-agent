@@ -54,7 +54,7 @@ export const CONFIG: {
   mockDir: string;
   skillsDir: string;
 } = {
-  port: parseInt(process.env.TRADE_TS_PORT || "8002"),
+  port: parseInt(process.env.PORT || process.env.TRADE_TS_PORT || "8002"),
   model: "claude-sonnet-4-5-20250929" as const,
   temperature: 0.2,
   maxTokens: parseInt(process.env.MAX_TOKENS || "300"),
