@@ -1,0 +1,17 @@
+{
+  "90001": {
+    "job_id": "90001",
+    "status": "contacted",
+    "messages": [
+      {
+        "sender": "tradie",
+        "message": "Hi Rachel,\n\nI've attached a formal PDF quote for your records.\n\nLet me know if you have any questions or would like to go ahead.\n\nCheers,\nLars\n\n[PDF Quote Q20260203-001 - $1,399.73 inc GST attached]",
+        "type": "follow_up",
+        "timestamp": "2026-02-03T14:47:51.495430"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  }
+}

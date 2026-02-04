@@ -1,0 +1,3824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Baz | Trade Assistant</title>
+
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0066CC">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- iOS PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Baz">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%2300CED1' width='180' height='180' rx='40'/><text x='90' y='120' font-size='90' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>B</text></svg>">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%2300CED1'/><ellipse cx='50' cy='35' rx='30' ry='12' fill='%23D2B48C'/><rect x='20' y='33' width='60' height='6' fill='%23006666' rx='2'/><rect x='18' y='39' width='64' height='4' fill='%23FFD700' rx='1'/><circle cx='38' cy='52' r='8' fill='%23333'/><circle cx='62' cy='52' r='8' fill='%23333'/><path d='M40 68 Q50 78 60 68' stroke='white' stroke-width='3' fill='none' stroke-linecap='round'/></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-dark: #0a0a0a;
+      --bg-sidebar: #0a0a0a;
+      --bg-main: #ffffff;
+      --bg-hover: #1a1a1a;
+      --bg-active: rgba(0,206,209,0.15);
+      --text-primary: #ffffff;
+      --text-secondary: #888;
+      --text-main: #333;
+      --accent: #0066CC;
+      --accent-yellow: #FFD700;
+      --accent-green: #0066CC;
+      --border: #222;
+      --border-light: #e0e0e0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ===== LEFT SIDEBAR ===== */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-sidebar);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sidebar-logo {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .sidebar-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .sidebar-subtitle {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+
+    .nav-section {
+      margin-bottom: 8px;
+    }
+
+    .nav-section-title {
+      padding: 8px 20px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--bg-active);
+      color: var(--text-primary);
+      border-left: 3px solid var(--accent);
+      padding-left: 17px;
+    }
+
+    .nav-item i {
+      width: 18px;
+      text-align: center;
+    }
+
+    .nav-item .badge {
+      margin-left: auto;
+      background: var(--accent);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .health-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .health-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+
+    .health-dot.error {
+      background: #f44336;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Top Bar */
+    .topbar {
+      height: 56px;
+      background: white;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .page-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .topbar-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar-action {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .voice-btn {
+      background: #e8e8e8;
+      color: #666;
+      border: none;
+      margin-right: 8px;
+      font-size: 15px;
+    }
+    .voice-btn:hover {
+      background: #ddd;
+    }
+    .voice-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+    .voice-btn.speaking {
+      animation: pulse-voice 1s ease-in-out infinite;
+    }
+    @keyframes pulse-voice {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .topbar-action:hover {
+      background: #00b8b8;
+    }
+
+    .user-dropdown {
+      padding: 8px 12px;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 14px;
+      background: white;
+      cursor: pointer;
+      min-width: 180px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: #0052A3;
+      color: white;
+    }
+
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid var(--border-light);
+    }
+
+    .btn-secondary:hover {
+      background: #e8e8e8;
+    }
+
+    /* Content Area */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      background: #f9f9f9;
+      position: relative;
+    }
+
+    /* ===== PAGE: CHAT ===== */
+    .page {
+      display: none;
+      height: 100%;
+    }
+
+    .page.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-page {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .message {
+      margin-bottom: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.assistant {
+      display: flex;
+      gap: 12px;
+    }
+
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0066CC, #004499);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .message-avatar.baz::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 10px;
+      background: #D2B48C;
+      border-radius: 50%;
+    }
+
+    .message-avatar.baz::after {
+      content: '😎';
+      font-size: 18px;
+      margin-top: 4px;
+    }
+
+    .message-avatar.user {
+      background: linear-gradient(135deg, #0066cc, #004499);
+    }
+
+    .message-content {
+      background: #f5f5f5;
+      padding: 14px 18px;
+      border-radius: 12px;
+      border-top-left-radius: 4px;
+      max-width: 85%;
+      line-height: 1.6;
+    }
+
+    .message.user {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .message.user .message-content {
+      background: #0066cc;
+      color: white;
+      border-radius: 12px;
+      border-top-right-radius: 4px;
+      order: -1;
+    }
+
+    .message-content h2, .message-content h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 16px 0 8px 0;
+    }
+
+    .message-content h2:first-child, .message-content h3:first-child {
+      margin-top: 0;
+    }
+
+    .message-content ul, .message-content ol {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+
+    .message-content li {
+      margin: 4px 0;
+    }
+
+    .message-content code {
+      background: rgba(0,0,0,0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+    }
+
+    .message-content pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+
+    .message-content pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    .message-content img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .message-content img:hover {
+      transform: scale(1.02);
+    }
+
+    #profileLogoContainer:hover #logoEditOverlay {
+      opacity: 1 !important;
+    }
+
+    .tool-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #666;
+      background: #e8e8e8;
+      padding: 4px 10px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    .tool-indicator i {
+      color: var(--accent);
+    }
+
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 8px 0;
+    }
+
+    .typing-indicator span {
+      width: 8px;
+      height: 8px;
+      background: #666;
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    .chat-input-area {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-light);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .chat-input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    .chat-input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      font-size: 14px;
+      resize: none;
+      min-height: 50px;
+      max-height: 150px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent);
+    }
+
+    .chat-input-hint {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    .chat-input-area .btn-icon {
+      width: 50px;
+      height: 50px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    #sendBtn.recording {
+      background: #f44336 !important;
+      animation: pulse-mic 1s ease-in-out infinite;
+    }
+    @keyframes pulse-mic {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* ===== PAGE: PROFILE ===== */
+    .profile-page .section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .profile-field {
+      margin-bottom: 16px;
+    }
+
+    .profile-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .profile-field .value {
+      font-size: 14px;
+      padding: 10px 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      border: 1px solid var(--border-light);
+    }
+
+    .profile-field textarea,
+    .profile-field input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .profile-field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: #f9f9f9;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    /* ===== PAGE: MEMORY ===== */
+    .memory-item {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .memory-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .memory-item-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .memory-item-time {
+      font-size: 11px;
+      color: #999;
+    }
+
+    .memory-item-content {
+      font-size: 13px;
+      color: #666;
+      font-family: 'SF Mono', Monaco, monospace;
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    /* ===== PAGE: CONFIG ===== */
+    .config-section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .config-section textarea {
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+    }
+
+    .config-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .config-row label {
+      width: 150px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .config-row input,
+    .config-row select {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    /* ===== PAGE: DEBUG ===== */
+    .debug-log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .debug-log .timestamp {
+      color: #666;
+    }
+
+    .debug-log .tool {
+      color: #4fc1ff;
+    }
+
+    .debug-log .success {
+      color: #4CAF50;
+    }
+
+    .debug-log .error {
+      color: #f44336;
+    }
+
+    /* ===== PAGE: JOBS ===== */
+    .job-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .job-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transform: translateY(-2px);
+    }
+
+    .job-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .job-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .job-score {
+      background: var(--accent-green);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .job-score.urgent {
+      background: #f44336;
+    }
+
+    .job-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .job-meta span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .job-description {
+      font-size: 14px;
+      color: #666;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .action-btn {
+      padding: 8px 16px;
+      background: white;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .action-btn i {
+      margin-right: 6px;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state i {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+    }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 450px;
+      padding: 24px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #999;
+    }
+
+    .modal-body {
+      margin-bottom: 20px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.92);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 40px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    }
+
+    .loading-content i {
+      font-size: 32px;
+      color: var(--accent);
+    }
+
+    .loading-content span {
+      font-size: 16px;
+      color: #666;
+      font-weight: 500;
+    }
+
+    /* ===== MOBILE RESPONSIVE ===== */
+
+    /* Hamburger button - hidden on desktop */
+    .hamburger-btn {
+      display: none;
+      background: var(--accent);
+      border: none;
+      color: white;
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 1001;
+      transition: background 0.3s ease, opacity 0.3s ease;
+    }
+
+    /* When sidebar is open, fade hamburger */
+    body.sidebar-open .hamburger-btn {
+      background: #999;
+      opacity: 0.7;
+    }
+
+    /* Mobile overlay */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+
+    body.sidebar-open .sidebar-overlay {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding-top: env(safe-area-inset-top);
+      }
+
+      .hamburger-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        width: 260px;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        padding-top: env(safe-area-inset-top);
+      }
+
+      body.sidebar-open .sidebar {
+        left: 0;
+      }
+
+      .main {
+        transition: transform 0.3s ease;
+        min-width: 100vw;
+      }
+
+      body.sidebar-open .main {
+        transform: translateX(260px);
+      }
+
+      /* Prevent horizontal scroll when sidebar shifts content */
+      html, body {
+        overflow-x: hidden;
+      }
+
+      header {
+        padding: 12px;
+        gap: 8px;
+      }
+
+      header h1 {
+        font-size: 14px;
+        flex: 1;
+      }
+
+      .content {
+        padding: 12px;
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      .chat-input-area {
+        padding: 8px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      }
+
+      .chat-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+      }
+
+      /* Larger fonts on mobile for readability */
+      .message-content {
+        font-size: 17px;
+        line-height: 1.5;
+      }
+
+      .job-card-title {
+        font-size: 17px;
+      }
+
+      .job-card-description {
+        font-size: 16px;
+      }
+
+      .nav-item {
+        font-size: 17px;
+        padding: 14px 20px;
+      }
+
+      /* Larger buttons on mobile */
+      .btn {
+        padding: 12px 20px;
+        font-size: 15px;
+      }
+
+      .btn-icon {
+        width: 54px;
+        height: 54px;
+        font-size: 18px;
+      }
+
+      .chat-input-area .btn-icon {
+        width: 54px;
+        height: 54px;
+      }
+
+      .topbar-action {
+        width: 40px;
+        height: 40px;
+      }
+
+      .job-card {
+        padding: 12px;
+      }
+
+      .config-section {
+        padding: 12px;
+      }
+
+      /* Adjust dropdowns - center dropdown takes available space */
+      .topbar-center {
+        flex: 1;
+        min-width: 0;
+        padding: 0 8px;
+      }
+
+      #userDropdown {
+        max-width: 100%;
+        width: 100%;
+        font-size: 12px;
+      }
+
+      .topbar-left .page-title {
+        display: none; /* Hide page title on mobile to save space */
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile sidebar overlay -->
+  <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo" style="background: linear-gradient(135deg, #0066CC, #008B8B); font-size: 20px;">😎</div>
+      <div>
+        <div class="sidebar-title" style="font-size: 18px; letter-spacing: 1px;">BAZ</div>
+        <div class="sidebar-subtitle" style="color: #0066CC;">Trade Assistant</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Chat</div>
+        <a class="nav-item active" data-page="chat">
+          <i class="fas fa-comment"></i> Chat
+        </a>
+        <a class="nav-item" data-page="sessions">
+          <i class="fas fa-history"></i> Sessions
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Business</div>
+        <a class="nav-item" data-page="profile">
+          <i class="fas fa-user-circle"></i> Profile
+        </a>
+        <a class="nav-item" data-page="jobs">
+          <i class="fas fa-briefcase"></i> Jobs
+          <span class="badge" id="jobsBadge">0</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Knowledge</div>
+        <a class="nav-item" data-page="bootstrap-business">
+          <i class="fas fa-store"></i> Business
+          <span class="badge badge-small" id="businessBadge" style="display:none;">new</span>
+        </a>
+        <a class="nav-item" data-page="bootstrap-memory">
+          <i class="fas fa-brain"></i> Memory
+        </a>
+        <a class="nav-item" data-page="bootstrap-job_history">
+          <i class="fas fa-clipboard-check"></i> Job History
+        </a>
+        <a class="nav-item" data-page="skills">
+          <i class="fas fa-graduation-cap"></i> Learning
+          <span id="patternCountBadge" class="badge" style="display: none;">0</span>
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Agent</div>
+        <a class="nav-item" data-page="bootstrap-assistant">
+          <i class="fas fa-robot"></i> Assistant
+        </a>
+        <a class="nav-item" data-page="bootstrap-soul">
+          <i class="fas fa-heart"></i> Soul
+        </a>
+        <a class="nav-item" data-page="tools">
+          <i class="fas fa-tools"></i> Tools
+        </a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Settings</div>
+        <a class="nav-item" data-page="config">
+          <i class="fas fa-cog"></i> Config
+        </a>
+        <a class="nav-item" data-page="debug">
+          <i class="fas fa-bug"></i> Debug
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="health-indicator">
+        <span class="health-dot" id="healthDot"></span>
+        <span id="healthText">Connecting...</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="hamburger-btn" onclick="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <div class="page-title" id="pageTitle">Chat</div>
+      </div>
+      <div class="topbar-center">
+        <select class="user-dropdown" id="userDropdown">
+          <option value="">Select business...</option>
+        </select>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-icon topbar-action voice-btn" onclick="toggleVoice()" title="Toggle voice" id="voiceBtn">
+          <i class="fas fa-volume-mute" id="voiceIcon"></i>
+        </button>
+        <button class="btn btn-icon topbar-action" onclick="newSession()" title="New Session" id="newSessionBtn">
+          <i class="fas fa-plus"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content Area -->
+    <div class="content">
+      <!-- Loading Overlay (shown when switching businesses) -->
+      <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+          <i class="fas fa-spinner fa-spin"></i>
+          <span id="loadingText">Loading profile...</span>
+        </div>
+      </div>
+      <!-- PAGE: Chat -->
+      <div class="page active" id="page-chat">
+        <div class="chat-page">
+          <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+              <div class="message-avatar baz"></div>
+              <div class="message-content">
+                Select a business from the dropdown above to get started.
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+              <textarea class="chat-input" id="chatInput" placeholder="Message the assistant..." rows="1"></textarea>
+            </div>
+            <button class="btn btn-primary btn-icon" id="sendBtn" onclick="handleSendBtn()" title="Send or speak">
+              <i class="fas fa-microphone" id="sendBtnIcon"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Sessions -->
+      <div class="page" id="page-sessions">
+        <div class="empty-state">
+          <i class="fas fa-history"></i>
+          <h3>Session History</h3>
+          <p>Previous chat sessions will appear here</p>
+        </div>
+      </div>
+
+      <!-- PAGE: Profile -->
+      <div class="page profile-page" id="page-profile">
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">Business Profile</h2>
+            <button class="btn btn-secondary" onclick="loadProfile()">
+              <i class="fas fa-sync"></i> Refresh
+            </button>
+          </div>
+          <!-- Logo and Name Header -->
+          <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border-light);">
+            <div id="profileLogoContainer" onclick="editLogo()" style="width: 80px; height: 80px; border-radius: 12px; background: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; cursor: pointer; position: relative; transition: all 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+              <img id="profileLogo" src="" alt="Logo" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <i id="profileLogoPlaceholder" class="fas fa-building" style="font-size: 32px; color: #ccc;"></i>
+              <div id="logoEditOverlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: white; font-size: 10px; text-align: center; padding: 2px; opacity: 0; transition: opacity 0.2s;">
+                <i class="fas fa-pencil-alt"></i> Edit
+              </div>
+            </div>
+            <div>
+              <div id="profileNameLarge" style="font-size: 24px; font-weight: 600; color: #333;">-</div>
+              <div id="profileTradeBadge" style="display: inline-block; margin-top: 4px; padding: 4px 12px; background: var(--accent); color: white; border-radius: 20px; font-size: 12px; font-weight: 500;">-</div>
+              <div id="profileLogoStatus" style="font-size: 11px; color: #999; margin-top: 6px; cursor: pointer;" onclick="editLogo()">
+                <span id="logoStatusText">No logo - click to add</span>
+              </div>
+            </div>
+          </div>
+          <div class="profile-grid">
+            <div class="profile-field">
+              <label>Business Name</label>
+              <div class="value" id="profileName">-</div>
+            </div>
+            <div class="profile-field">
+              <label>Owner / Contact</label>
+              <div class="value" id="profileOwner">-</div>
+            </div>
+          </div>
+          <div class="profile-grid">
+            <div class="profile-field">
+              <label>Trade / Services</label>
+              <div class="value" id="profileTrade">-</div>
+            </div>
+            <div class="profile-field">
+              <label>Location</label>
+              <div class="value" id="profileLocation">-</div>
+            </div>
+          </div>
+          <div class="profile-grid">
+            <div class="profile-field">
+              <label>ABN</label>
+              <div class="value" id="profileABN">-</div>
+            </div>
+            <div class="profile-field">
+              <label>License</label>
+              <div class="value" id="profileLicense">-</div>
+            </div>
+          </div>
+          <div class="profile-grid">
+            <div class="profile-field">
+              <label>Member Since</label>
+              <div class="value" id="profileMemberSince">-</div>
+            </div>
+            <div class="profile-field">
+              <label>Awards</label>
+              <div class="value" id="profileAwards">-</div>
+            </div>
+          </div>
+          <div class="profile-field">
+            <label>About Us</label>
+            <div class="value" id="profileDescription" style="min-height: 60px; white-space: pre-wrap;">-</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Performance Stats</h2>
+          <div class="profile-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="statRating">-</div>
+              <div class="stat-label">Rating</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statReviews">-</div>
+              <div class="stat-label">Reviews</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statHired">-</div>
+              <div class="stat-label">Times Hired</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statResponse">-</div>
+              <div class="stat-label">Response Time</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Jobs -->
+      <div class="page" id="page-jobs">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <span id="jobsCountBadge" style="background: var(--accent); color: white; padding: 4px 12px; border-radius: 12px; font-size: 14px; font-weight: 600;">0</span>
+            <span style="margin-left: 8px; color: #666;">job leads</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="jobsFilter" onchange="renderJobsList()" style="padding: 6px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;">
+              <option value="leads">New Leads</option>
+              <option value="quoting">Quoting</option>
+              <option value="booked">Booked</option>
+              <option value="skipped">Skipped</option>
+              <option value="all">All Jobs</option>
+            </select>
+            <select id="jobsSort" onchange="renderJobsList()" style="padding: 6px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 13px;">
+              <option value="newest">Newest First</option>
+              <option value="score">Lead Score</option>
+              <option value="distance">Closest</option>
+            </select>
+            <button class="btn btn-secondary" onclick="refreshJobs()" title="Load more jobs">
+              <i class="fas fa-sync"></i>
+            </button>
+            <button class="btn btn-primary" onclick="askAgentToSummarize()">
+              <i class="fas fa-robot"></i> Summarize
+            </button>
+          </div>
+        </div>
+        <div id="jobsList"></div>
+      </div>
+
+      <!-- PAGE: Skills (Learning) -->
+      <div class="page" id="page-skills">
+        <!-- Quoting Skill Section -->
+        <div class="config-section" style="background: linear-gradient(135deg, #f0fff0 0%, #fff 100%); border-left: 3px solid #0066CC;">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-graduation-cap"></i> Quoting Skill</h2>
+            <button class="btn btn-secondary" onclick="refreshQuotingSkill()">
+              <i class="fas fa-sync"></i> Refresh
+            </button>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+            This shows what Baz has learned about how YOU quote jobs. As you chat and correct pricing, patterns are captured here.
+          </p>
+
+          <!-- Skill Status -->
+          <div id="skillStatus" style="margin-bottom: 16px;">
+            <span style="color: #999;">Loading skill data...</span>
+          </div>
+
+          <!-- Learned Patterns -->
+          <div id="learnedPatterns">
+            <!-- Patterns will be rendered here -->
+          </div>
+        </div>
+
+        <!-- How Skills Work -->
+        <div class="section" style="margin-top: 24px;">
+          <h3 style="font-size: 14px; color: #666; margin-bottom: 12px;"><i class="fas fa-info-circle"></i> How Learning Works</h3>
+          <div style="font-size: 13px; color: #666; line-height: 1.6;">
+            <p><strong>1. You chat with Baz</strong> - Discuss jobs, pricing, and quoting</p>
+            <p><strong>2. Baz captures patterns</strong> - When you state rates or correct pricing, Baz saves it</p>
+            <p><strong>3. Patterns appear here</strong> - You can see exactly what Baz has learned</p>
+            <p><strong>4. Future quotes use this</strong> - Baz applies your patterns to new jobs</p>
+            <p style="margin-top: 12px; padding: 8px 12px; background: #f5f5f5; border-radius: 4px;">
+              <strong>Try:</strong> "I charge $85 per metre for colorbond fencing" or "No, for timber it's more like $95"
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Tools -->
+      <div class="page" id="page-tools">
+        <div class="section">
+          <h2 class="section-title"><i class="fas fa-tools"></i> Available Tools</h2>
+          <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+            These are the tools Baz can use during conversations. They run automatically when needed.
+          </p>
+          <div id="toolsList"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: Bootstrap - Business -->
+      <div class="page" id="page-bootstrap-business">
+        <!-- Profile URL Import Section -->
+        <div class="config-section" style="background: linear-gradient(135deg, #fff8f0 0%, #fff 100%); border-left: 3px solid var(--accent);">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-link"></i> Import from ServiceSeeking</h2>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Paste your ServiceSeeking profile URL and I'll automatically import your business details.
+          </p>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="profileUrlInput" placeholder="https://www.serviceseeking.com.au/profile/..." style="flex: 1; padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 6px; font-size: 14px;">
+            <button class="btn btn-primary" onclick="importFromProfileUrl()">
+              <i class="fas fa-download"></i> Import
+            </button>
+          </div>
+          <div id="importStatus" style="font-size: 12px; color: #999; margin-top: 8px;"></div>
+        </div>
+
+        <div class="config-section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-store"></i> BUSINESS.md</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="refreshBootstrapFile('BUSINESS.md')">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-primary" onclick="saveBootstrapFile('BUSINESS.md')">
+                <i class="fas fa-save"></i> Save
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Information about your business - rates, service areas, preferences. The assistant learns and updates this as you chat.
+          </p>
+          <textarea id="bootstrap-business-content" style="min-height: 400px;"></textarea>
+          <div id="bootstrap-business-status" style="font-size: 12px; color: #999; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: Bootstrap - Assistant -->
+      <div class="page" id="page-bootstrap-assistant">
+        <div class="config-section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-robot"></i> ASSISTANT.md</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="refreshBootstrapFile('ASSISTANT.md')">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-primary" onclick="saveBootstrapFile('ASSISTANT.md')">
+                <i class="fas fa-save"></i> Save
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Your assistant's identity - give it a name and personality.
+          </p>
+          <textarea id="bootstrap-assistant-content" style="min-height: 300px;"></textarea>
+          <div id="bootstrap-assistant-status" style="font-size: 12px; color: #999; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: Bootstrap - Soul -->
+      <div class="page" id="page-bootstrap-soul">
+        <div class="config-section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-heart"></i> SOUL.md</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="refreshBootstrapFile('SOUL.md')">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-primary" onclick="saveBootstrapFile('SOUL.md')">
+                <i class="fas fa-save"></i> Save
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Core principles for how the assistant helps tradies. These guide every interaction.
+          </p>
+          <textarea id="bootstrap-soul-content" style="min-height: 400px;"></textarea>
+          <div id="bootstrap-soul-status" style="font-size: 12px; color: #999; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: Bootstrap - Memory -->
+      <div class="page" id="page-bootstrap-memory">
+        <div class="config-section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-brain"></i> MEMORY.md</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="refreshBootstrapFile('MEMORY.md')">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-primary" onclick="saveBootstrapFile('MEMORY.md')">
+                <i class="fas fa-save"></i> Save
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Notes, patterns, and context learned from conversations. The assistant updates this automatically.
+          </p>
+          <textarea id="bootstrap-memory-content" style="min-height: 400px;"></textarea>
+          <div id="bootstrap-memory-status" style="font-size: 12px; color: #999; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: Bootstrap - Job History -->
+      <div class="page" id="page-bootstrap-job_history">
+        <div class="config-section">
+          <div class="section-header">
+            <h2 class="section-title"><i class="fas fa-clipboard-check"></i> JOB_HISTORY.md</h2>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary" onclick="refreshBootstrapFile('JOB_HISTORY.md')">
+                <i class="fas fa-sync"></i> Refresh
+              </button>
+              <button class="btn btn-primary" onclick="saveBootstrapFile('JOB_HISTORY.md')">
+                <i class="fas fa-save"></i> Save
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 12px;">
+            Summary of completed jobs - helps the AI reference past work when quoting and chatting with customers.
+          </p>
+          <textarea id="bootstrap-job_history-content" style="min-height: 400px;"></textarea>
+          <div id="bootstrap-job_history-status" style="font-size: 12px; color: #999; margin-top: 8px;"></div>
+        </div>
+      </div>
+
+      <!-- PAGE: Config -->
+      <div class="page" id="page-config">
+        <div class="config-section">
+          <div class="section-header">
+            <h2 class="section-title">System Prompt</h2>
+            <button class="btn btn-primary" onclick="saveConfig()">
+              <i class="fas fa-save"></i> Save
+            </button>
+          </div>
+          <textarea id="systemPrompt"></textarea>
+        </div>
+
+        <div class="config-section">
+          <h2 class="section-title">Model Settings</h2>
+          <div class="config-row">
+            <label>Model</label>
+            <select id="configModel">
+              <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+              <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+            </select>
+          </div>
+          <div class="config-row">
+            <label>Temperature</label>
+            <input type="number" id="configTemperature" value="0.7" min="0" max="1" step="0.1">
+          </div>
+          <div class="config-row">
+            <label>Max Tokens</label>
+            <input type="number" id="configMaxTokens" value="4096">
+          </div>
+          <div class="config-row">
+            <label>Brevity Mode</label>
+            <button class="btn" id="brevityBtn" onclick="toggleBrevity()" style="min-width: 80px;">
+              <i class="fas fa-expand-alt" id="brevityIcon"></i> <span id="brevityLabel">OFF</span>
+            </button>
+            <span style="font-size: 11px; color: #999; margin-left: 8px;">Short, concise responses (good for voice demos)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Debug -->
+      <div class="page" id="page-debug">
+        <div class="section">
+          <div class="section-header">
+            <h2 class="section-title">Debug Log</h2>
+            <button class="btn btn-secondary" onclick="clearDebugLog()">
+              <i class="fas fa-trash"></i> Clear
+            </button>
+          </div>
+          <div class="debug-log" id="debugLog">
+            <div class="timestamp">[Waiting for activity...]</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">Current State</h2>
+          <div class="debug-log" id="stateView">
+            <pre>{}</pre>
+          </div>
+        </div>
+
+        <div class="section" style="border-left: 3px solid #f44336;">
+          <div class="section-header">
+            <h2 class="section-title" style="color: #f44336;"><i class="fas fa-exclamation-triangle"></i> Danger Zone</h2>
+          </div>
+          <p style="font-size: 13px; color: #666; margin-bottom: 16px;">
+            These actions are destructive and cannot be undone.
+          </p>
+          <div class="config-row">
+            <label>Delete Business</label>
+            <select id="deleteBusinessSelect" style="flex: 1;">
+              <option value="">Select business to delete...</option>
+            </select>
+            <button class="btn" style="background: #f44336; color: white;" onclick="deleteBusiness()">
+              <i class="fas fa-trash"></i> Delete
+            </button>
+          </div>
+          <div class="config-row" style="margin-top: 16px;">
+            <label>Reset All Data</label>
+            <button class="btn" style="background: #f44336; color: white;" onclick="resetAllData()">
+              <i class="fas fa-bomb"></i> Reset Everything
+            </button>
+          </div>
+          <div class="config-row" style="margin-top: 16px;">
+            <label>Dev: Reset & Reload</label>
+            <button class="btn" style="background: #ff9800; color: white;" onclick="resetAndReloadTemplates()">
+              <i class="fas fa-sync"></i> Reset All + Reload Templates
+            </button>
+            <span style="font-size: 11px; color: #999; margin-left: 8px;">For testing - reloads templates without server restart</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create User Modal -->
+  <div class="modal-overlay" id="createUserModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">Import Business from ServiceSeeking</h3>
+        <button class="modal-close" onclick="hideCreateUserModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>ServiceSeeking Profile URL <span style="color: #f44336;">*</span></label>
+          <input type="text" id="newBusinessUrl" placeholder="https://www.serviceseeking.com.au/profile/...">
+          <small style="color: #666; display: block; margin-top: 6px;">
+            Paste your profile URL and we'll import your business name, description, reviews, and more.
+          </small>
+        </div>
+        <div id="importProgress" style="display: none; margin-top: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #666;">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span id="importProgressText">Importing profile...</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="hideCreateUserModal()">Cancel</button>
+        <button class="btn btn-primary" id="createBusinessBtn" onclick="createBusiness()">
+          <i class="fas fa-download"></i> Import & Start
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== STATE =====
+    const API_URL = window.location.origin;
+    let sessionId = null;
+    let currentBusinessId = null;
+    let businesses = [];
+    let isLoading = false;
+    let debugLog = [];
+    let memory = [];
+
+    // ===== TTS / VOICE =====
+    const DEFAULT_ELEVENLABS_KEY = ''; // Set via localStorage or prompt
+    const TTS_VOICE_ID = localStorage.getItem('elevenlabs_voice_id') || 'IKne3meq5aSn9XLyUdCD'; // Charlie - Australian male
+    const TTS_MODEL = 'eleven_multilingual_v2';
+    let voiceEnabled = localStorage.getItem('voice_enabled') === 'true';
+    let audioQueue = [];
+    let isPlayingAudio = false;
+    let currentAudio = null;
+    let pendingSpeech = '';
+
+    function initVoiceUI() {
+      updateVoiceUI();
+    }
+
+    function toggleVoice() {
+      // If audio is actively playing, stop it (but keep voice enabled)
+      if (voiceEnabled && (isPlayingAudio || ttsTextQueue.length)) {
+        stopAllAudio();
+        updateVoiceUI();
+        return;
+      }
+
+      if (!voiceEnabled) {
+        let apiKey = localStorage.getItem('elevenlabs_api_key');
+        if (!apiKey) {
+          // Use embedded default; prompt only if no default
+          if (DEFAULT_ELEVENLABS_KEY) {
+            apiKey = DEFAULT_ELEVENLABS_KEY;
+          } else {
+            apiKey = prompt('Enter your ElevenLabs API key:');
+            if (!apiKey) return;
+          }
+          localStorage.setItem('elevenlabs_api_key', apiKey);
+        }
+        // Unlock browser audio autoplay policy via user-gesture context
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        ctx.resume().then(() => ctx.close());
+        voiceEnabled = true;
+        localStorage.setItem('voice_enabled', 'true');
+      } else {
+        voiceEnabled = false;
+        localStorage.setItem('voice_enabled', 'false');
+        stopAllAudio();
+      }
+      updateVoiceUI();
+    }
+
+    function updateVoiceUI() {
+      const btn = document.getElementById('voiceBtn');
+      const icon = document.getElementById('voiceIcon');
+      btn.classList.toggle('active', voiceEnabled);
+      btn.classList.toggle('speaking', voiceEnabled && isPlayingAudio);
+      icon.className = voiceEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    }
+
+    let ttsTextQueue = [];    // queue of text chunks waiting to be sent to API
+    let ttsFetching = false;  // true while an API request is in-flight
+
+    async function queueSpeech(text) {
+      const trimmed = text.trim();
+      if (!trimmed || !voiceEnabled) return;
+      ttsTextQueue.push(trimmed);
+      if (!ttsFetching) processTtsQueue();
+    }
+
+    async function processTtsQueue() {
+      const apiKey = localStorage.getItem('elevenlabs_api_key');
+      if (!apiKey || !voiceEnabled) { ttsTextQueue = []; return; }
+      if (!ttsTextQueue.length) { ttsFetching = false; return; }
+
+      ttsFetching = true;
+      const text = ttsTextQueue.shift();
+
+      try {
+        console.log('[TTS] requesting speech:', text.substring(0, 60));
+        const resp = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${TTS_VOICE_ID}?output_format=mp3_44100_128`, {
+          method: 'POST',
+          headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text,
+            model_id: TTS_MODEL,
+            voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0, use_speaker_boost: true, speed: 1.0 }
+          })
+        });
+        if (!resp.ok) { console.warn('[TTS] API error:', resp.status); }
+        else {
+          const blob = await resp.blob();
+          console.log('[TTS] got audio blob:', blob.size, 'bytes');
+          const url = URL.createObjectURL(blob);
+          audioQueue.push(url);
+          if (!isPlayingAudio) playNextAudio();
+        }
+      } catch (e) {
+        console.warn('[TTS] fetch error:', e);
+      }
+
+      // Process next item in queue (serialized)
+      if (ttsTextQueue.length) processTtsQueue();
+      else ttsFetching = false;
+    }
+
+    // Persistent audio element — reuse to maintain iOS playback permission
+    const persistentAudio = new Audio();
+    persistentAudio.onended = () => { console.log('[TTS] clip ended'); playNextAudio(); };
+    persistentAudio.onerror = (e) => { console.warn('[TTS] playback error:', e); playNextAudio(); };
+
+    function playNextAudio() {
+      if (!audioQueue.length) { isPlayingAudio = false; currentAudio = null; updateVoiceUI(); console.log('[TTS] queue empty'); return; }
+      isPlayingAudio = true;
+      updateVoiceUI();
+      const url = audioQueue.shift();
+      if (persistentAudio.src) URL.revokeObjectURL(persistentAudio.src);
+      persistentAudio.src = url;
+      currentAudio = persistentAudio;
+      persistentAudio.play().then(() => console.log('[TTS] playing')).catch((e) => { console.warn('[TTS] play() blocked:', e); playNextAudio(); });
+    }
+
+    function stopAllAudio() {
+      ttsTextQueue = [];
+      audioQueue.forEach(url => URL.revokeObjectURL(url));
+      audioQueue = [];
+      persistentAudio.pause();
+      if (persistentAudio.src) { URL.revokeObjectURL(persistentAudio.src); persistentAudio.removeAttribute('src'); }
+      currentAudio = null;
+      isPlayingAudio = false;
+      ttsFetching = false;
+      pendingSpeech = '';
+      updateVoiceUI();
+    }
+
+    function feedSpeechDelta(delta) {
+      if (!voiceEnabled) return;
+      pendingSpeech += delta;
+      console.log('[TTS] feedDelta, buffer length:', pendingSpeech.length);
+      // Check for sentence boundaries
+      const sentenceEnd = /([.!?])[\s\n]/g;
+      let match;
+      let lastIndex = 0;
+      while ((match = sentenceEnd.exec(pendingSpeech)) !== null) {
+        lastIndex = match.index + match[0].length;
+      }
+      if (lastIndex > 0) {
+        const sentences = pendingSpeech.substring(0, lastIndex);
+        pendingSpeech = pendingSpeech.substring(lastIndex);
+        queueSpeech(sentences);
+      }
+    }
+
+    function flushSpeech() {
+      console.log('[TTS] flushSpeech, voiceEnabled:', voiceEnabled, 'remaining:', pendingSpeech.length);
+      if (!voiceEnabled) return;
+      if (pendingSpeech.trim()) {
+        queueSpeech(pendingSpeech);
+      }
+      pendingSpeech = '';
+    }
+
+    // ===== BREVITY MODE =====
+    let brevityMode = false;
+
+    async function initBrevity() {
+      try {
+        const resp = await fetch(`${API_URL}/config`);
+        const data = await resp.json();
+        brevityMode = !!data.brevityMode;
+        updateBrevityUI();
+        if (data.maxTokens) {
+          document.getElementById('configMaxTokens').value = data.maxTokens;
+        }
+      } catch {}
+    }
+
+    async function toggleBrevity() {
+      try {
+        const resp = await fetch(`${API_URL}/config/brevity`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: !brevityMode })
+        });
+        const data = await resp.json();
+        brevityMode = data.brevityMode;
+        updateBrevityUI();
+      } catch (e) {
+        console.warn('Failed to toggle brevity:', e);
+      }
+    }
+
+    function updateBrevityUI() {
+      const btn = document.getElementById('brevityBtn');
+      const icon = document.getElementById('brevityIcon');
+      const label = document.getElementById('brevityLabel');
+      if (brevityMode) {
+        btn.style.background = 'var(--accent)';
+        btn.style.color = 'white';
+        icon.className = 'fas fa-compress-alt';
+        label.textContent = 'ON';
+      } else {
+        btn.style.background = '';
+        btn.style.color = '';
+        icon.className = 'fas fa-expand-alt';
+        label.textContent = 'OFF';
+      }
+    }
+
+    // ===== SPEECH-TO-TEXT (Mic Input) =====
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isRecording = false;
+    let useWhisper = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    function initMic() {
+      if (SpeechRecognition) {
+        // Use native Web Speech API (Chrome, Android)
+        recognition = new SpeechRecognition();
+        recognition.lang = 'en-AU';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+
+        recognition.onresult = (event) => {
+          const input = document.getElementById('chatInput');
+          let transcript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          input.value = transcript;
+          input.style.height = 'auto';
+          input.style.height = input.scrollHeight + 'px';
+
+          if (event.results[event.results.length - 1].isFinal) {
+            stopMic();
+            stopAllAudio();
+            sendMessage();
+          }
+        };
+
+        recognition.onerror = (event) => {
+          console.warn('[STT] error:', event.error);
+          stopMic();
+        };
+
+        recognition.onend = () => {
+          stopMic();
+        };
+      } else {
+        // Fallback to Whisper API (iOS Safari)
+        useWhisper = true;
+        console.log('[STT] No Web Speech API, using Whisper fallback');
+      }
+    }
+
+    async function toggleMic() {
+      if (isRecording) {
+        if (useWhisper && mediaRecorder) {
+          mediaRecorder.stop();
+        } else if (recognition) {
+          recognition.stop();
+        }
+        return;
+      }
+
+      // Stop any playing audio so mic doesn't pick it up
+      stopAllAudio();
+
+      if (useWhisper) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioChunks = [];
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+          mediaRecorder.onstop = async () => {
+            stream.getTracks().forEach(t => t.stop());
+            startMicUI();
+            document.getElementById('chatInput').placeholder = 'Transcribing...';
+            const blob = new Blob(audioChunks, { type: 'audio/webm' });
+            await transcribeWithWhisper(blob);
+          };
+          mediaRecorder.start();
+          isRecording = true;
+          document.getElementById('sendBtn').classList.add('recording');
+          updateSendBtnIcon();
+          document.getElementById('chatInput').placeholder = 'Listening... tap to send';
+        } catch (e) {
+          console.warn('[STT] mic access error:', e);
+          alert('Microphone access denied. Check your browser settings.');
+        }
+      } else {
+        try {
+          recognition.start();
+          isRecording = true;
+          document.getElementById('sendBtn').classList.add('recording');
+          updateSendBtnIcon();
+          document.getElementById('chatInput').placeholder = 'Listening...';
+        } catch (e) {
+          console.warn('[STT] start error:', e);
+        }
+      }
+    }
+
+    async function transcribeWithWhisper(audioBlob) {
+      const openaiKey = localStorage.getItem('openai_api_key');
+      if (!openaiKey) {
+        // Try server-side proxy
+        try {
+          const formData = new FormData();
+          formData.append('file', audioBlob, 'audio.webm');
+          formData.append('model', 'whisper-1');
+          formData.append('language', 'en');
+          const resp = await fetch(`${API_URL}/transcribe`, { method: 'POST', body: formData });
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data.text) {
+              document.getElementById('chatInput').value = data.text;
+              stopMic();
+              stopAllAudio();
+              sendMessage();
+              return;
+            }
+          }
+        } catch {}
+        // Ask for key if no server proxy
+        const key = prompt('Enter OpenAI API key for voice transcription:');
+        if (!key) { stopMic(); return; }
+        localStorage.setItem('openai_api_key', key);
+        return transcribeWithWhisper(audioBlob);
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'audio.webm');
+        formData.append('model', 'whisper-1');
+        formData.append('language', 'en');
+        const resp = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${openaiKey}` },
+          body: formData
+        });
+        if (!resp.ok) { console.warn('[STT] Whisper error:', resp.status); stopMic(); return; }
+        const data = await resp.json();
+        if (data.text) {
+          document.getElementById('chatInput').value = data.text;
+          stopMic();
+          stopAllAudio();
+          sendMessage();
+        }
+      } catch (e) {
+        console.warn('[STT] Whisper error:', e);
+        stopMic();
+      }
+    }
+
+    function startMicUI() {
+      // visual reset handled by stopMic
+    }
+
+    function stopMic() {
+      isRecording = false;
+      document.getElementById('sendBtn').classList.remove('recording');
+      document.getElementById('chatInput').placeholder = 'Message the assistant...';
+      updateSendBtnIcon();
+    }
+
+    const DEFAULT_SYSTEM_PROMPT = `You are a business growth assistant for tradies on ServiceSeeking.com.au.
+
+## Your Core Purpose: Help Them Win More Business
+
+Your job is simple: **help tradies get more jobs and make more money**.
+
+You do this through three pillars:
+
+### 1. Profile That Attracts
+- Look professional (logo, photos, description that sells)
+- Build trust (reviews, credentials, response time)
+- Stand out from competitors
+
+### 2. Smart Job Selection
+- Quickly assess which leads are worth pursuing
+- Identify red flags (tyre-kickers, problem customers)
+- Focus on jobs they'll actually win
+
+### 3. Winning Quotes
+- Price competitively based on their history
+- Write messages that connect with customers
+- Offer PDF quotes for larger jobs
+
+## Your Strategy Approach
+Actively develop strategy based on:
+- Their job history: What jobs do they win?
+- Their profile: What's working? What's not?
+- Market patterns: Which suburbs and prices convert?
+
+## Personality
+- Be helpful and brief
+- Be direct - tradies are busy
+- Focus on winning jobs
+- One question at a time
+
+(Full prompt is in trade_assistant.py)`;
+
+    const TOOLS = [
+      // Profile tools
+      { name: 'get_profile', description: 'Load business profile from mock data', icon: 'fa-user-circle', category: 'Profile' },
+      { name: 'fetch_profile_from_url', description: 'Scrape real SS profile from URL', icon: 'fa-globe', category: 'Profile' },
+      { name: 'analyze_scraped_profile', description: 'Analyze scraped profile data', icon: 'fa-search', category: 'Profile' },
+      { name: 'analyze_profile_completeness', description: 'Score profile completeness', icon: 'fa-chart-pie', category: 'Profile' },
+      { name: 'update_profile_field', description: 'Simulate profile update', icon: 'fa-edit', category: 'Profile' },
+      { name: 'get_profile_stats', description: 'Get performance statistics', icon: 'fa-chart-bar', category: 'Profile' },
+      { name: 'get_matched_jobs', description: 'Get jobs matched to business', icon: 'fa-briefcase', category: 'Jobs' },
+      // Learning tools
+      { name: 'remember_business_info', description: 'Save business preferences (rates, travel, etc)', icon: 'fa-save', category: 'Learning' },
+      { name: 'add_memory_note', description: 'Record patterns and context', icon: 'fa-sticky-note', category: 'Learning' },
+      { name: 'get_business_context', description: 'Load all saved business context', icon: 'fa-database', category: 'Learning' },
+      { name: 'update_assistant_personality', description: 'Customize assistant name/style', icon: 'fa-magic', category: 'Learning' },
+      { name: 'save_profile_to_bootstrap', description: 'Save scraped profile data to knowledge base', icon: 'fa-cloud-download-alt', category: 'Learning' },
+    ];
+
+    // ===== INITIALIZATION =====
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Load saved state and fetch businesses from server
+      await loadState();
+      initVoiceUI();
+      initBrevity();
+      initMic();
+
+      // Setup navigation
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => switchPage(item.dataset.page));
+      });
+
+      // Setup chat input
+      const chatInput = document.getElementById('chatInput');
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+
+      // Auto-resize textarea + toggle mic/send icon
+      chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 150) + 'px';
+        updateSendBtnIcon();
+      });
+
+      // Setup user dropdown
+      document.getElementById('userDropdown').addEventListener('change', (e) => {
+        if (e.target.value === '__new__') {
+          // Reset dropdown and show modal
+          e.target.value = currentBusinessId || '';
+          showCreateUserModal();
+        } else if (e.target.value) {
+          selectBusiness(e.target.value);
+        }
+      });
+
+      // Load tools list
+      renderTools();
+
+      // Load system prompt from server
+      loadSystemPrompt();
+
+      // Check health
+      checkHealth();
+
+      // Event delegation for action buttons
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('action-btn')) {
+          const action = e.target.getAttribute('data-action');
+          if (action) {
+            sendActionButton(action);
+          }
+        }
+      });
+    });
+
+    // ===== NAVIGATION =====
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-open');
+    }
+
+    function closeSidebar() {
+      document.body.classList.remove('sidebar-open');
+    }
+
+    function switchPage(page) {
+      // Close sidebar on mobile when switching pages
+      closeSidebar();
+
+      // Update nav
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.page === page);
+      });
+
+      // Update content
+      document.querySelectorAll('.page').forEach(p => {
+        p.classList.toggle('active', p.id === `page-${page}`);
+      });
+
+      // Update title
+      const titles = {
+        chat: 'Chat',
+        sessions: 'Sessions',
+        profile: 'Profile',
+        jobs: 'Jobs',
+        'bootstrap-business': 'Business',
+        'bootstrap-assistant': 'Assistant',
+        'bootstrap-soul': 'Soul',
+        'bootstrap-memory': 'Memory',
+        skills: 'Learning',
+        tools: 'Tools',
+        config: 'Config',
+        debug: 'Debug'
+      };
+
+      // Load bootstrap file when switching to a bootstrap page
+      if (page.startsWith('bootstrap-')) {
+        const filename = page.replace('bootstrap-', '').toUpperCase() + '.md';
+        refreshBootstrapFile(filename);
+      }
+
+      // Load quoting skill when switching to skills page
+      if (page === 'skills') {
+        refreshQuotingSkill();
+      }
+
+      // Render tools when switching to tools page
+      if (page === 'tools') {
+        renderTools();
+      }
+
+      document.getElementById('pageTitle').textContent = titles[page] || '';
+
+      // Show new session button only on chat page
+      const newSessionBtn = document.getElementById('newSessionBtn');
+      if (newSessionBtn) {
+        newSessionBtn.style.display = page === 'chat' ? 'flex' : 'none';
+      }
+    }
+
+    // ===== BUSINESS MANAGEMENT =====
+    async function loadState() {
+      const saved = localStorage.getItem('tradeAssistantState');
+      if (saved) {
+        const state = JSON.parse(saved);
+        businesses = state.businesses || [];
+        currentBusinessId = state.currentBusinessId;
+        memory = state.memory || [];
+      }
+
+      // Fetch businesses from server and merge with local state
+      try {
+        const response = await fetch(`${API_URL}/bootstrap/list`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.businesses && data.businesses.length > 0) {
+            // Merge server businesses with local state
+            const serverIds = new Set(data.businesses.map(b => b.id));
+            // Keep local businesses that aren't on server (newly created)
+            const localOnly = businesses.filter(b => !serverIds.has(b.id));
+            // Use server businesses (they have current names) + local-only
+            businesses = [...data.businesses, ...localOnly];
+            addDebugLog(`Loaded ${data.businesses.length} businesses from server`, 'success');
+          }
+        }
+      } catch (e) {
+        addDebugLog(`Could not fetch businesses from server: ${e.message}`, 'warning');
+      }
+
+      // No demo businesses - user must import their own via ServiceSeeking URL
+
+      saveState();
+      renderBusinessDropdown();
+      renderMemory();
+
+      if (currentBusinessId) {
+        document.getElementById('userDropdown').value = currentBusinessId;
+        selectBusiness(currentBusinessId, true);  // Always start a session on load
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem('tradeAssistantState', JSON.stringify({
+        businesses,
+        currentBusinessId,
+        memory
+      }));
+    }
+
+    function renderBusinessDropdown() {
+      const dropdown = document.getElementById('userDropdown');
+      dropdown.innerHTML = '<option value="">Select business...</option>';
+      businesses.forEach(b => {
+        dropdown.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+      });
+      // Add "+ New Business" at the end
+      dropdown.innerHTML += '<option value="__new__">+ New Business</option>';
+
+      // Also update delete dropdown if it exists
+      const deleteDropdown = document.getElementById('deleteBusinessSelect');
+      if (deleteDropdown) {
+        deleteDropdown.innerHTML = '<option value="">Select business to delete...</option>';
+        businesses.forEach(b => {
+          deleteDropdown.innerHTML += `<option value="${b.id}">${b.name} (${b.id})</option>`;
+        });
+      }
+    }
+
+    async function selectBusiness(businessId, startSession = true) {
+      // Show loading overlay
+      const overlay = document.getElementById('loadingOverlay');
+      const loadingText = document.getElementById('loadingText');
+      overlay.classList.add('active');
+
+      const business = businesses.find(b => b.id === businessId);
+      loadingText.textContent = `Loading ${business?.name || businessId}...`;
+
+      currentBusinessId = businessId;
+      saveState();
+
+      try {
+        if (startSession) {
+          loadingText.textContent = 'Starting session...';
+          await startNewSession();
+        }
+
+        // Load profile data
+        loadingText.textContent = 'Loading profile...';
+        await loadProfile();
+
+        loadingText.textContent = 'Loading jobs...';
+        await loadJobs();
+
+        // Load bootstrap files
+        loadAllBootstrapFiles();
+      } finally {
+        // Hide loading overlay
+        overlay.classList.remove('active');
+      }
+    }
+
+    function showCreateUserModal() {
+      document.getElementById('createUserModal').classList.add('active');
+      document.getElementById('newBusinessUrl').focus();
+      document.getElementById('importProgress').style.display = 'none';
+      document.getElementById('createBusinessBtn').disabled = false;
+    }
+
+    function hideCreateUserModal() {
+      document.getElementById('createUserModal').classList.remove('active');
+      document.getElementById('newBusinessUrl').value = '';
+      document.getElementById('importProgress').style.display = 'none';
+      document.getElementById('createBusinessBtn').disabled = false;
+    }
+
+    async function createBusiness() {
+      const url = document.getElementById('newBusinessUrl').value.trim();
+
+      // Validate URL is provided and is a ServiceSeeking URL
+      if (!url) {
+        alert('Please enter your ServiceSeeking profile URL');
+        return;
+      }
+
+      if (!url.includes('serviceseeking.com.au/profile/')) {
+        alert('Please enter a valid ServiceSeeking profile URL\n\nExample: https://www.serviceseeking.com.au/profile/123456-your-business');
+        return;
+      }
+
+      // Show progress
+      const progressEl = document.getElementById('importProgress');
+      const progressText = document.getElementById('importProgressText');
+      const createBtn = document.getElementById('createBusinessBtn');
+      progressEl.style.display = 'block';
+      createBtn.disabled = true;
+
+      const id = `biz_${Date.now()}`;
+
+      try {
+        // Step 1: Import profile via API (before starting chat)
+        progressText.textContent = 'Fetching profile from ServiceSeeking...';
+        const importResponse = await fetch(`${API_URL}/import-profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ business_id: id, url: url })
+        });
+
+        if (!importResponse.ok) {
+          throw new Error('Failed to import profile');
+        }
+
+        const importData = await importResponse.json();
+        const businessName = importData.business_name || 'Imported Business';
+
+        progressText.textContent = `Imported: ${businessName}`;
+
+        // Step 2: Add to businesses list
+        businesses.push({ id, name: businessName, url });
+        saveState();
+        renderBusinessDropdown();
+
+        // Step 3: Close modal and select the business
+        hideCreateUserModal();
+        document.getElementById('userDropdown').value = id;
+        await selectBusiness(id);
+
+        // Step 4: Refresh data displays
+        loadAllBootstrapFiles();
+        await loadProfile();
+        await loadJobs();
+
+        addDebugLog(`Business imported: ${businessName}`);
+
+      } catch (error) {
+        progressText.textContent = `Error: ${error.message}`;
+        progressEl.querySelector('i').className = 'fas fa-exclamation-circle';
+        progressEl.querySelector('i').style.color = '#f44336';
+        createBtn.disabled = false;
+        addDebugLog(`Import error: ${error.message}`, 'error');
+      }
+    }
+
+    async function deleteBusiness() {
+      const select = document.getElementById('deleteBusinessSelect');
+      const businessId = select.value;
+
+      if (!businessId) {
+        alert('Please select a business to delete');
+        return;
+      }
+
+      const business = businesses.find(b => b.id === businessId);
+      if (!confirm(`Are you sure you want to delete "${business?.name || businessId}"?\n\nThis will remove all associated data and cannot be undone.`)) {
+        return;
+      }
+
+      // Delete from server first
+      try {
+        const response = await fetch(`${API_URL}/bootstrap/${businessId}`, {
+          method: 'DELETE'
+        });
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Failed to delete');
+        }
+        addDebugLog(`Deleted business from server: ${businessId}`, 'success');
+      } catch (e) {
+        addDebugLog(`Server delete failed: ${e.message}`, 'warning');
+        // Continue with local delete anyway
+      }
+
+      // Remove from businesses array
+      businesses = businesses.filter(b => b.id !== businessId);
+
+      // Clear current if it was the deleted one
+      if (currentBusinessId === businessId) {
+        currentBusinessId = null;
+        sessionId = null;
+        document.getElementById('userDropdown').value = '';
+        document.getElementById('chatMessages').innerHTML = `
+          <div class="message assistant">
+            <div class="message-avatar baz"></div>
+            <div class="message-content">
+              Business deleted. Select another or create a new one.
+            </div>
+          </div>
+        `;
+      }
+
+      saveState();
+      renderBusinessDropdown();
+      select.value = '';
+
+      addDebugLog(`Deleted business: ${business?.name || businessId}`, 'error');
+      alert(`Business "${business?.name || businessId}" deleted.`);
+    }
+
+    async function resetAllData() {
+      if (!confirm('WARNING: This will delete ALL businesses, memory, and settings.\n\nAre you absolutely sure?')) {
+        return;
+      }
+
+      if (!confirm('FINAL WARNING: This cannot be undone. Continue?')) {
+        return;
+      }
+
+      // Delete each business from server
+      const businessesToDelete = [...businesses];
+      for (const biz of businessesToDelete) {
+        try {
+          await fetch(`${API_URL}/bootstrap/${biz.id}`, { method: 'DELETE' });
+          addDebugLog(`Deleted ${biz.id} from server`);
+        } catch (e) {
+          addDebugLog(`Failed to delete ${biz.id}: ${e.message}`, 'warning');
+        }
+      }
+
+      // Clear local state
+      businesses = [];
+      memory = [];
+      currentBusinessId = null;
+      sessionId = null;
+
+      // Clear localStorage
+      localStorage.removeItem('tradeAssistantState');
+      localStorage.removeItem('systemPrompt');
+
+      // Reset UI
+      document.getElementById('userDropdown').value = '';
+      document.getElementById('chatMessages').innerHTML = `
+        <div class="message assistant">
+          <div class="message-avatar baz"></div>
+          <div class="message-content">
+            All data has been reset. Create a new business to get started!
+          </div>
+        </div>
+      `;
+      document.getElementById('systemPrompt').value = DEFAULT_SYSTEM_PROMPT;
+
+      saveState();
+      renderBusinessDropdown();
+      renderMemory();
+
+      addDebugLog('All data reset', 'error');
+      alert('All data has been reset.');
+    }
+
+    async function resetAndReloadTemplates() {
+      if (!confirm('This will delete ALL businesses and reload templates from disk.\n\nUseful for testing after code changes. Continue?')) {
+        return;
+      }
+
+      try {
+        addDebugLog('Calling reset-all endpoint...');
+        const response = await fetch(`${API_URL}/bootstrap/reset-all`, {
+          method: 'POST'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          addDebugLog(`Reset complete: ${data.deleted_count} businesses deleted, templates reloaded: ${data.templates_reloaded}`, 'success');
+        } else {
+          addDebugLog(`Reset had errors: ${JSON.stringify(data.errors)}`, 'warning');
+        }
+
+        // Clear local state
+        businesses = [];
+        memory = [];
+        currentBusinessId = null;
+        sessionId = null;
+        localStorage.removeItem('tradeAssistantState');
+
+        // Reset UI
+        document.getElementById('userDropdown').value = '';
+        document.getElementById('chatMessages').innerHTML = `
+          <div class="message assistant">
+            <div class="message-avatar baz"></div>
+            <div class="message-content">
+              All businesses cleared and templates reloaded. Create a new business to test the updated flow!
+            </div>
+          </div>
+        `;
+
+        saveState();
+        renderBusinessDropdown();
+        renderMemory();
+
+        alert(`Reset complete!\n\n• ${data.deleted_count} businesses deleted\n• Templates reloaded: ${data.templates_reloaded ? 'Yes' : 'No'}\n• Sessions cleared: Yes\n\nCreate a new business to test.`);
+      } catch (e) {
+        addDebugLog(`Reset failed: ${e.message}`, 'error');
+        alert(`Reset failed: ${e.message}`);
+      }
+    }
+
+    // ===== SESSION MANAGEMENT =====
+    async function startNewSession() {
+      try {
+        addDebugLog('Starting new session...');
+        const response = await fetch(`${API_URL}/assistant/start`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ business_id: currentBusinessId })
+        });
+
+        const data = await response.json();
+        sessionId = data.session_id;
+        addDebugLog(`Session started: ${sessionId}`, 'success');
+
+        // Clear chat and stream the welcome message
+        document.getElementById('chatMessages').innerHTML = '';
+
+        // Dismiss loading overlay so user sees chat with streaming welcome
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.classList.remove('active');
+
+        // Ask AI to greet based on context — stream it
+        const welcomeResponse = await fetch(`${API_URL}/assistant/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            message: "Hi, I just connected.",
+            stream: true
+          })
+        });
+
+        const contentType = welcomeResponse.headers.get('content-type') || '';
+        if (contentType.includes('text/event-stream')) {
+          await handleStreamingResponse(welcomeResponse);
+        } else {
+          // Fallback for non-streaming servers
+          const welcomeData = await welcomeResponse.json();
+          addMessage(welcomeData.response, 'assistant', welcomeData.tool_calls);
+          await refreshAfterToolCalls(welcomeData.tool_calls);
+        }
+
+      } catch (error) {
+        addDebugLog(`Session error: ${error.message}`, 'error');
+        console.error('Session error:', error);
+      }
+    }
+
+    function newSession() {
+      if (currentBusinessId) {
+        startNewSession();
+      } else {
+        alert('Please select a business first');
+      }
+    }
+
+    // ===== SEND BUTTON (mic/send toggle) =====
+    function updateSendBtnIcon() {
+      const icon = document.getElementById('sendBtnIcon');
+      const input = document.getElementById('chatInput');
+      const hasText = input.value.trim().length > 0;
+      if (isRecording) {
+        icon.className = 'fas fa-stop';
+      } else if (hasText) {
+        icon.className = 'fas fa-paper-plane';
+      } else {
+        icon.className = 'fas fa-microphone';
+      }
+    }
+
+    function handleSendBtn() {
+      if (isRecording) {
+        // Stop recording
+        toggleMic();
+        return;
+      }
+      const input = document.getElementById('chatInput');
+      if (input.value.trim()) {
+        sendMessage();
+      } else {
+        toggleMic();
+      }
+    }
+
+    // ===== CHAT =====
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const message = input.value.trim();
+      if (!message || isLoading || !sessionId) return;
+
+      stopAllAudio();
+
+      input.value = '';
+      input.style.height = 'auto';
+      isLoading = true;
+      document.getElementById('sendBtn').disabled = true;
+      updateSendBtnIcon();
+
+      addMessage(message, 'user');
+
+      try {
+        addDebugLog(`Sending: "${message.substring(0, 50)}..."`);
+
+        const response = await fetch(`${API_URL}/assistant/message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, message, stream: true })
+        });
+
+        const contentType = response.headers.get('content-type') || '';
+
+        if (contentType.includes('text/event-stream')) {
+          // ── SSE streaming path ──
+          await handleStreamingResponse(response);
+        } else {
+          // ── Fallback: non-streaming JSON response (e.g., LangChain server on 8001) ──
+          const typingId = addTypingIndicator();
+          const data = await response.json();
+          removeTypingIndicator(typingId);
+
+          if (data.tool_calls?.length) {
+            data.tool_calls.forEach(tc => addDebugLog(`Tool: ${tc}`, 'tool'));
+          }
+
+          addMessage(data.response, 'assistant', data.tool_calls);
+          addDebugLog(`Response received (${data.turn_time}s)`, 'success');
+          updateStateView(data);
+          await refreshAfterToolCalls(data.tool_calls);
+        }
+
+      } catch (error) {
+        addMessage('Sorry, something went wrong. Please try again.', 'assistant');
+        addDebugLog(`Error: ${error.message}`, 'error');
+      } finally {
+        isLoading = false;
+        document.getElementById('sendBtn').disabled = false;
+      }
+    }
+
+    async function handleStreamingResponse(response) {
+      const container = document.getElementById('chatMessages');
+
+      // Create message bubble with separate zones: tools, text, cursor
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'message assistant';
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'message-content';
+
+      const toolsZone = document.createElement('span');
+      const textZone = document.createElement('span');
+
+      contentDiv.appendChild(toolsZone);
+      contentDiv.appendChild(textZone);
+
+      msgDiv.innerHTML = '<div class="message-avatar baz"></div>';
+      msgDiv.appendChild(contentDiv);
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+
+      let fullText = '';
+      const toolCalls = [];
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = '';
+
+      // ── Smooth streaming controls ──
+      let pendingDelta = '';
+      let visibleText = '';   // all text flushed so far (for re-rendering markdown)
+      let flushTimer = null;
+      let hitButtons = false;
+      // Scroll anchor: invisible element kept at the bottom
+      const scrollAnchor = document.createElement('div');
+      container.appendChild(scrollAnchor);
+
+      function smoothScroll() {
+        // Disabled — lets user scroll freely during streaming
+      }
+
+      function flushDelta() {
+        flushTimer = null;
+        if (!pendingDelta) return;
+
+        // Word-boundary buffering: only flush up to the last word break
+        const lastSpace = pendingDelta.lastIndexOf(' ');
+        const lastNewline = pendingDelta.lastIndexOf('\n');
+        const breakAt = Math.max(lastSpace, lastNewline);
+
+        let toFlush;
+        if (breakAt > 0) {
+          toFlush = pendingDelta.substring(0, breakAt + 1);
+          pendingDelta = pendingDelta.substring(breakAt + 1);
+        } else {
+          if (pendingDelta.length < 60) return;
+          toFlush = pendingDelta;
+          pendingDelta = '';
+        }
+
+        visibleText += toFlush;
+        // Re-render with markdown so text is always formatted
+        textZone.innerHTML = formatMarkdown(visibleText);
+        smoothScroll();
+      }
+
+      function scheduleFlush() {
+        if (!flushTimer) flushTimer = setTimeout(flushDelta, 50);
+      }
+
+      function flushAll() {
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+        if (pendingDelta) {
+          visibleText += pendingDelta;
+          pendingDelta = '';
+        }
+        textZone.innerHTML = formatMarkdown(visibleText);
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split('\n');
+        sseBuffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          let event;
+          try { event = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (event.type === 'text_delta') {
+            fullText += event.delta;
+            if (!hitButtons) {
+              if (fullText.includes('[[')) {
+                hitButtons = true;
+                const cutoff = fullText.lastIndexOf('[[');
+                const visibleSoFar = textZone.textContent.length + pendingDelta.length;
+                const remaining = fullText.substring(0, cutoff).substring(visibleSoFar);
+                if (remaining) pendingDelta += remaining;
+              } else {
+                pendingDelta += event.delta;
+                feedSpeechDelta(event.delta);
+              }
+            }
+            scheduleFlush();
+
+          } else if (event.type === 'tool_start') {
+            toolCalls.push(event.name);
+            addDebugLog(`Tool: ${event.name}`, 'tool');
+            const badge = document.createElement('span');
+            badge.className = 'tool-indicator';
+            badge.innerHTML = `<i class="fas fa-cog fa-spin"></i> ${escapeHtml(event.name)}`;
+            toolsZone.appendChild(badge);
+            toolsZone.appendChild(document.createTextNode(' '));
+            smoothScroll();
+
+          } else if (event.type === 'tool_end') {
+            addDebugLog(`Tool done: ${event.name}`, 'success');
+            toolsZone.querySelectorAll('.tool-indicator').forEach(el => {
+              if (el.textContent.includes(event.name)) {
+                const icon = el.querySelector('i');
+                if (icon) icon.classList.remove('fa-spin');
+              }
+            });
+
+          } else if (event.type === 'done') {
+            flushAll();
+            flushSpeech();
+            scrollAnchor.remove();
+
+            // Final render with full markdown formatting
+            const finalText = event.response || fullText;
+            let toolsHtml = '';
+            if (toolCalls.length) {
+              toolsHtml = toolCalls.map(tc =>
+                `<span class="tool-indicator"><i class="fas fa-cog"></i> ${escapeHtml(tc)}</span>`
+              ).join(' ') + '<br><br>';
+            }
+            contentDiv.innerHTML = toolsHtml + formatMarkdown(finalText);
+            container.scrollTop = container.scrollHeight;
+
+            if (event.timing) {
+              addDebugLog(`Response received (${event.timing.total}s)`, 'success');
+              updateStateView({ session_id: sessionId, response: finalText, timing: event.timing, tool_calls: toolCalls, framework: 'pi-agent' });
+            }
+
+            await refreshAfterToolCalls(toolCalls);
+          }
+        }
+      }
+
+      // Safety: stream ended without a 'done' event
+      if (textZone.parentNode) {
+        flushAll();
+        scrollAnchor.remove();
+        let toolsHtml = '';
+        if (toolCalls.length) {
+          toolsHtml = toolCalls.map(tc =>
+            `<span class="tool-indicator"><i class="fas fa-cog"></i> ${escapeHtml(tc)}</span>`
+          ).join(' ') + '<br><br>';
+        }
+        contentDiv.innerHTML = toolsHtml + formatMarkdown(fullText);
+      }
+    }
+
+    async function refreshAfterToolCalls(toolCalls) {
+      if (!toolCalls?.length) return;
+      const tcStr = toolCalls.join(' ');
+
+      if (['remember_business_info', 'add_memory_note', 'save_profile', 'complete_first_session', 'upload_logo', 'update_about_us']
+          .some(t => tcStr.includes(t))) {
+        loadAllBootstrapFiles();
+        await loadProfile();
+      }
+
+      if (['skip_job', 'book_job', 'complete_job', 'submit_quote', 'send_message']
+          .some(t => tcStr.includes(t))) {
+        await loadJobs();
+      }
+    }
+
+    function addMessage(text, type, toolCalls = []) {
+      const container = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = `message ${type}`;
+
+      let toolsHtml = '';
+      if (toolCalls?.length) {
+        toolsHtml = toolCalls.map(tc =>
+          `<span class="tool-indicator"><i class="fas fa-cog"></i> ${tc}</span>`
+        ).join(' ');
+      }
+
+      const avatar = type === 'assistant'
+        ? '<div class="message-avatar baz"></div>'
+        : '<div class="message-avatar user"><i class="fas fa-user"></i></div>';
+
+      div.innerHTML = `
+        ${avatar}
+        <div class="message-content">
+          ${toolsHtml ? toolsHtml + '<br><br>' : ''}
+          ${formatMarkdown(text)}
+        </div>
+      `;
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+      const container = document.getElementById('chatMessages');
+      const id = 'typing-' + Date.now();
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = 'message assistant';
+      div.innerHTML = `
+        <div class="message-avatar baz"></div>
+        <div class="message-content">
+          <div class="typing-indicator"><span></span><span></span><span></span></div>
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return id;
+    }
+
+    function removeTypingIndicator(id) {
+      document.getElementById(id)?.remove();
+    }
+
+    function formatMarkdown(text) {
+      if (!text) return '';
+
+      // Extract action buttons first (before escaping)
+      const buttonRegex = /\[\[([^\]]+)\]\]/g;
+      const buttons = [];
+      let buttonMatch;
+      while ((buttonMatch = buttonRegex.exec(text)) !== null) {
+        buttons.push(buttonMatch[1]);
+      }
+      // Remove button syntax from text
+      text = text.replace(buttonRegex, '');
+
+      // Extract images before escaping (format: ![alt](url))
+      const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+      const images = [];
+      let imageMatch;
+      while ((imageMatch = imageRegex.exec(text)) !== null) {
+        images.push({ alt: imageMatch[1], url: imageMatch[2], placeholder: `__IMG_${images.length}__` });
+      }
+      // Replace images with placeholders
+      let imageIndex = 0;
+      text = text.replace(imageRegex, () => images[imageIndex++].placeholder);
+
+      // Extract links before escaping (format: [text](url)) - but not images
+      const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+      const links = [];
+      let linkMatch;
+      while ((linkMatch = linkRegex.exec(text)) !== null) {
+        links.push({ text: linkMatch[1], url: linkMatch[2], placeholder: `__LINK_${links.length}__` });
+      }
+      // Replace links with placeholders
+      let linkIndex = 0;
+      text = text.replace(linkRegex, () => links[linkIndex++].placeholder);
+
+      let html = escapeHtml(text);
+
+      // Restore images as actual img tags
+      images.forEach((img, idx) => {
+        const imgHtml = `<div style="margin: 12px 0;"><img src="${img.url}" alt="${escapeHtml(img.alt)}" style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="margin-top: 8px;"><a href="${img.url}" target="_blank" style="color: #0066cc; text-decoration: none; font-size: 13px;"><i class="fas fa-external-link-alt"></i> View full size</a></div></div>`;
+        html = html.replace(`__IMG_${idx}__`, imgHtml);
+      });
+
+      // Restore links as actual anchor tags
+      links.forEach((link, idx) => {
+        const linkHtml = `<a href="${link.url}" target="_blank" style="color: #0066cc;">${escapeHtml(link.text)}</a>`;
+        html = html.replace(`__LINK_${idx}__`, linkHtml);
+      });
+
+      // Headers
+      html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+      // Bold
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+      // Code blocks
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      // Lists - process before line breaks
+      // Split into lines, group consecutive list items
+      const lines = html.split('\n');
+      const processed = [];
+      let inList = false;
+
+      for (const line of lines) {
+        if (line.startsWith('- ')) {
+          if (!inList) {
+            processed.push('<ul>');
+            inList = true;
+          }
+          processed.push(`<li>${line.substring(2)}</li>`);
+        } else {
+          if (inList) {
+            processed.push('</ul>');
+            inList = false;
+          }
+          processed.push(line);
+        }
+      }
+      if (inList) processed.push('</ul>');
+
+      html = processed.join('\n');
+
+      // Line breaks - collapse multiple into paragraph breaks
+      html = html.replace(/\n\n+/g, '</p><p>');
+      html = html.replace(/\n/g, ' ');  // Single newlines become spaces
+
+      // Add action buttons at the end
+      if (buttons.length > 0) {
+        html += '<div class="action-buttons">';
+        buttons.forEach((btn, idx) => {
+          // Use data attribute to avoid escaping issues
+          html += `<button class="action-btn" data-action="${btn.replace(/"/g, '&quot;')}">${escapeHtml(btn)}</button>`;
+        });
+        html += '</div>';
+      }
+
+      return html;
+    }
+
+    function sendActionButton(text) {
+      if (!sessionId) {
+        alert('Please start a session first');
+        return;
+      }
+      document.getElementById('chatInput').value = text;
+      sendMessage();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ===== PROFILE =====
+    async function loadProfile() {
+      if (!currentBusinessId) {
+        console.log('loadProfile: No business ID');
+        return;
+      }
+
+      console.log('loadProfile: Loading for', currentBusinessId);
+      addDebugLog(`Loading profile for ${currentBusinessId}`);
+
+      try {
+        const business = businesses.find(b => b.id === currentBusinessId);
+
+        // Fetch BUSINESS.md to get profile fields
+        const businessRes = await fetch(`${API_URL}/bootstrap/${currentBusinessId}/BUSINESS.md`);
+        const businessData = await businessRes.json();
+        console.log('loadProfile: BUSINESS.md data', businessData);
+
+        // Fetch MEMORY.md to get stats
+        const memoryRes = await fetch(`${API_URL}/bootstrap/${currentBusinessId}/MEMORY.md`);
+        const memoryData = await memoryRes.json();
+
+        // Parse contents
+        const businessContent = businessData.content || '';
+        const memoryContent = memoryData.content || '';
+
+        const parseField = (content, fieldName, allowUrls = false) => {
+          // Match **Field:** followed by optional value until end of line
+          // The value must be on the same line, not spanning to next line
+          const regex = new RegExp(`\\*\\*${fieldName}:\\*\\*\\s*([^\\n]*?)\\s*$`, 'im');
+          const match = content.match(regex);
+          if (match && match[1]) {
+            const value = match[1].trim();
+            // Skip placeholder values
+            if (value.startsWith('*') || value === '' || value === '-') return '';
+            // Skip if it looks like markdown (another field or header)
+            if (value.startsWith('**') || value.startsWith('#')) return '';
+            // Skip URLs unless explicitly allowed (for Logo URL field)
+            if (!allowUrls && (value.startsWith('http://') || value.startsWith('https://'))) return '';
+            return value;
+          }
+          return '';
+        };
+
+        // Populate profile fields from BUSINESS.md
+        const businessName = parseField(businessContent, 'Business Name');
+        const ownerName = parseField(businessContent, 'Owner Name');
+        const trade = parseField(businessContent, 'Trade');
+        const location = parseField(businessContent, 'Primary Suburbs');
+        const abn = parseField(businessContent, 'ABN');
+        const license = parseField(businessContent, 'License Number');
+
+        console.log('loadProfile: Parsed values', { businessName, ownerName, trade, location, abn, license });
+        addDebugLog(`Profile: ${businessName || 'no name'}, Owner: ${ownerName || 'none'}`);
+
+        // Also get member since from BUSINESS.md
+        const memberSince = parseField(businessContent, 'Years in Business');
+
+        // Get description from "What Makes You Different" section
+        // Handle optional blank lines before --- separator
+        const descMatch = businessContent.match(/## What Makes You Different\s*\n([\s\S]*?)(?=\n\s*---|$)/);
+        let description = '';
+        if (descMatch) {
+          description = descMatch[1].trim();
+          // Remove placeholder text
+          if (description.startsWith('*(')) description = '';
+        }
+        console.log('loadProfile: Description match', { found: !!descMatch, description: description.substring(0, 100) });
+
+        // Get logo URL from dedicated endpoint (not BUSINESS.md)
+        let logoUrl = null;
+        try {
+          const logoResp = await fetch(`${API_URL}/bootstrap/${currentBusinessId}/logo`);
+          if (logoResp.ok) {
+            const logoData = await logoResp.json();
+            if (logoData.success && logoData.logo_url) {
+              logoUrl = logoData.logo_url;
+            }
+          }
+        } catch (e) {
+          console.log('Logo fetch failed:', e);
+        }
+
+        // Update profile header (logo section)
+        const displayName = businessName || business?.name || '-';
+        document.getElementById('profileNameLarge').textContent = displayName;
+        document.getElementById('profileTradeBadge').textContent = trade || 'Trade';
+
+        // Update logo display
+        const logoImg = document.getElementById('profileLogo');
+        const logoPlaceholder = document.getElementById('profileLogoPlaceholder');
+        const logoStatusText = document.getElementById('logoStatusText');
+        const logoContainer = document.getElementById('profileLogoContainer');
+
+        // Store logo state for editLogo function
+        window.currentLogoUrl = logoUrl;
+
+        if (logoUrl && logoUrl.startsWith('http')) {
+          logoImg.src = logoUrl;
+          logoImg.style.display = 'block';
+          logoPlaceholder.style.display = 'none';
+          logoStatusText.innerHTML = '<i class="fas fa-pencil-alt"></i> Click to change';
+          logoStatusText.style.color = '#666';
+        } else {
+          logoImg.style.display = 'none';
+          logoPlaceholder.style.display = 'block';
+          logoStatusText.innerHTML = '<i class="fas fa-plus"></i> Click to add logo';
+          logoStatusText.style.color = '#0066cc';
+        }
+
+        // Update profile display
+        document.getElementById('profileName').textContent = displayName;
+        document.getElementById('profileOwner').textContent = ownerName || '-';
+        document.getElementById('profileTrade').textContent = trade || '-';
+        document.getElementById('profileLocation').textContent = location || '-';
+        document.getElementById('profileABN').textContent = abn || '-';
+        document.getElementById('profileLicense').textContent = license || '-';
+        document.getElementById('profileMemberSince').textContent = memberSince || '-';
+
+        // Look for stats in memory
+        // Format: **Profile Rating:** 5.0/5 stars
+        const ratingMatch = memoryContent.match(/\*\*Profile Rating:\*\*\s*([\d.]+)/i);
+        const reviewMatch = memoryContent.match(/\*\*Review Count:\*\*\s*(\d+)/i);
+        const hiredMatch = memoryContent.match(/\*\*Times Hired:\*\*\s*(\d+)/i);
+        const responseMatch = memoryContent.match(/\*\*Response Time:\*\*\s*([^\n]+)/i);
+        const awardsMatch = memoryContent.match(/\*\*Awards:\*\*\s*([^\n]+)/i);
+
+        document.getElementById('statRating').textContent = ratingMatch ? ratingMatch[1] : '-';
+        document.getElementById('statReviews').textContent = reviewMatch ? reviewMatch[1] : '-';
+        document.getElementById('statHired').textContent = hiredMatch ? hiredMatch[1] : '-';
+        document.getElementById('statResponse').textContent = responseMatch ? responseMatch[1].trim() : '-';
+        document.getElementById('profileAwards').textContent = awardsMatch ? awardsMatch[1].trim() : '-';
+        document.getElementById('profileDescription').textContent = description || '-';
+
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        // Fallback to basic info
+        const business = businesses.find(b => b.id === currentBusinessId);
+        document.getElementById('profileName').textContent = business?.name || currentBusinessId;
+      }
+    }
+
+    function refreshProfile() {
+      if (sessionId) {
+        sendMessageDirect('Show me my current profile stats');
+      }
+    }
+
+    function editLogo() {
+      // Switch to chat tab
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelector('.nav-item[data-page="chat"]').classList.add('active');
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-chat').classList.add('active');
+
+      // Set appropriate message based on whether they have a logo
+      if (window.currentLogoUrl && window.currentLogoUrl.startsWith('http')) {
+        sendMessageDirect('I want to update my logo - can you generate a new one?');
+      } else {
+        sendMessageDirect('I need a logo for my business - can you generate one?');
+      }
+    }
+
+    async function sendMessageDirect(text) {
+      const input = document.getElementById('chatInput');
+      input.value = text;
+      await sendMessage();
+    }
+
+    // ===== JOBS =====
+    let allJobs = [];
+
+    async function loadJobs() {
+      const container = document.getElementById('jobsList');
+      const badgeEl = document.getElementById('jobsBadge');
+      const countBadgeEl = document.getElementById('jobsCountBadge');
+
+      if (!currentBusinessId) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-briefcase"></i>
+            <h3>No Business Selected</h3>
+            <p>Select a business to see matched jobs</p>
+          </div>
+        `;
+        badgeEl.textContent = '0';
+        countBadgeEl.textContent = '0';
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/jobs/${currentBusinessId}`);
+        const data = await response.json();
+
+        if (data.success && data.jobs && data.jobs.length > 0) {
+          allJobs = data.jobs;
+          renderJobsList();
+          const newCount = allJobs.filter(j => j.status === 'new').length;
+          badgeEl.textContent = newCount;
+          countBadgeEl.textContent = allJobs.length;
+          addDebugLog(`Loaded ${allJobs.length} jobs`, 'success');
+        } else {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-briefcase"></i>
+              <h3>No Jobs Yet</h3>
+              <p>Jobs matching your profile will appear here</p>
+            </div>
+          `;
+          badgeEl.textContent = '0';
+          countBadgeEl.textContent = '0';
+        }
+      } catch (error) {
+        addDebugLog(`Error loading jobs: ${error.message}`, 'error');
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error Loading Jobs</h3>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    async function refreshJobs() {
+      // Trigger generation of new simulated jobs and reload
+      const btn = document.querySelector('button[onclick="refreshJobs()"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+      }
+
+      try {
+        // Call refresh endpoint to generate new jobs
+        const response = await fetch(`${API_URL}/jobs/${currentBusinessId}/refresh`, { method: 'POST' });
+        const data = await response.json();
+
+        if (data.success) {
+          addDebugLog(`Refreshed: ${data.new_jobs_count || 0} new jobs`, 'success');
+        }
+
+        // Reload the jobs list
+        await loadJobs();
+      } catch (error) {
+        addDebugLog(`Refresh error: ${error.message}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-sync"></i>';
+        }
+      }
+    }
+
+    function renderJobsList() {
+      const container = document.getElementById('jobsList');
+      const sortBy = document.getElementById('jobsSort').value;
+      const filterBy = document.getElementById('jobsFilter').value;
+
+      // Filter jobs by status
+      let filteredJobs = [...allJobs];
+      if (filterBy === 'leads') {
+        // New leads - status is 'new' or 'leads' or undefined (not yet contacted)
+        filteredJobs = filteredJobs.filter(j => !j.status || j.status === 'new' || j.status === 'leads');
+      } else if (filterBy === 'quoting') {
+        filteredJobs = filteredJobs.filter(j => j.status === 'quoting');
+      } else if (filterBy === 'booked') {
+        filteredJobs = filteredJobs.filter(j => j.status === 'booked');
+      } else if (filterBy === 'skipped') {
+        filteredJobs = filteredJobs.filter(j => j.status === 'skipped');
+      }
+      // 'all' shows everything
+
+      // Sort jobs
+      if (sortBy === 'newest') {
+        filteredJobs.sort((a, b) => new Date(b.posted_at) - new Date(a.posted_at));
+      } else if (sortBy === 'score') {
+        // Use lead_score (intent-based) with fallback to match_score
+        filteredJobs.sort((a, b) => (b.lead_score || b.match_score || 0) - (a.lead_score || a.match_score || 0));
+      } else if (sortBy === 'distance') {
+        filteredJobs.sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999));
+      }
+
+      if (filteredJobs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-filter"></i>
+            <h3>No Jobs Match Filter</h3>
+            <p>Try changing the filter above</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredJobs.map(job => {
+        const isSkipped = job.status === 'skipped';
+        const isQuoting = job.status === 'quoting';
+        const isBooked = job.status === 'booked';
+
+        let statusBadge;
+        if (isSkipped) {
+          statusBadge = `<span class="job-score" style="background: #999;">SKIPPED</span>`;
+        } else if (isQuoting) {
+          statusBadge = `<span class="job-score" style="background: #2196F3;">QUOTING</span>`;
+        } else if (isBooked) {
+          statusBadge = `<span class="job-score" style="background: #4CAF50;">BOOKED</span>`;
+        } else if (job.urgency === 'urgent') {
+          statusBadge = '<span class="job-score urgent">URGENT</span>';
+        } else {
+          // Lead score based on intent: ready_to_hire scores higher
+          const score = job.lead_score || job.match_score || '-';
+          const scoreLabel = job.intent === 'ready_to_hire' ? 'HOT' : '';
+          statusBadge = `<span class="job-score" title="${job.intent === 'ready_to_hire' ? 'Ready to hire' : 'Researching'}">${score}% ${scoreLabel}</span>`;
+        }
+
+        let cardStyle = '';
+        if (isSkipped) cardStyle = 'opacity: 0.6; border-left: 3px solid #999;';
+        else if (isQuoting) cardStyle = 'border-left: 3px solid #2196F3;';
+        else if (isBooked) cardStyle = 'border-left: 3px solid #4CAF50;';
+
+        const skipReason = isSkipped && job.skip_reason ? `<div style="color: #999; font-size: 12px; margin-top: 4px;"><i class="fas fa-times-circle"></i> Skipped: ${job.skip_reason}</div>` : '';
+
+        return `
+          <div class="job-card" style="${cardStyle}" onclick="openJob('${job.job_id}')">
+            <div class="job-card-header">
+              <div class="job-title">${escapeHtml(job.name)}</div>
+              ${statusBadge}
+            </div>
+            <div class="job-meta">
+              <span><i class="fas fa-user"></i> ${job.customer?.verified ? '✓ ' : ''}${escapeHtml(job.customer?.name || 'Customer')}</span>
+              <span><i class="fas fa-map-marker-alt"></i> ${job.suburb}, ${job.distance_km}km</span>
+              <span><i class="fas fa-clock"></i> ${job.posted_ago}</span>
+            </div>
+            <div class="job-description">${escapeHtml((job.description || '').substring(0, 120))}${job.description?.length > 120 ? '...' : ''}</div>
+            <div style="margin-top: 8px; font-weight: 600; color: ${job.budget_display === 'No budget set' ? '#999' : 'var(--accent)'};">
+              ${job.budget_display || 'No budget set'}
+            </div>
+            ${skipReason}
+          </div>
+        `;
+      }).join('');
+
+      // Update the count badge to show filtered count
+      const activeCount = allJobs.filter(j => j.status !== 'skipped').length;
+      document.getElementById('jobsCountBadge').textContent = activeCount;
+    }
+
+    function sortJobs() {
+      renderJobsList();
+    }
+
+    function openJob(jobId) {
+      // Find the job to check its status
+      const job = allJobs.find(j => j.job_id === jobId);
+      switchPage('chat');
+
+      if (job && (job.status === 'quoting' || job.status === 'quoted')) {
+        // For jobs we've already quoted on, show the conversation history
+        sendMessageDirect(`Show me the conversation and quote for job ${jobId}`);
+      } else if (job && job.status === 'booked') {
+        // For booked jobs, show booking details
+        sendMessageDirect(`Show me the booking details for job ${jobId}`);
+      } else {
+        // For new leads, give a brief rundown
+        sendMessageDirect(`Give me a quick rundown on job ${jobId}`);
+      }
+    }
+
+    function askAgentToSummarize() {
+      switchPage('chat');
+      sendMessageDirect(`I have ${allJobs.length} job leads. Give me a quick summary - which ones look promising and which should I skip?`);
+    }
+
+    // ===== PROFILE URL IMPORT =====
+    async function importFromProfileUrl() {
+      const url = document.getElementById('profileUrlInput').value.trim();
+      const statusEl = document.getElementById('importStatus');
+
+      if (!url) {
+        statusEl.textContent = 'Please enter a URL';
+        statusEl.style.color = '#f44336';
+        return;
+      }
+
+      if (!url.includes('serviceseeking.com.au')) {
+        statusEl.textContent = 'Please enter a valid ServiceSeeking profile URL';
+        statusEl.style.color = '#f44336';
+        return;
+      }
+
+      if (!sessionId) {
+        statusEl.textContent = 'Please start a chat session first';
+        statusEl.style.color = '#f44336';
+        return;
+      }
+
+      statusEl.textContent = 'Importing profile...';
+      statusEl.style.color = '#666';
+
+      // Switch to chat and send import command
+      switchPage('chat');
+      document.getElementById('chatInput').value = `Import my profile from this URL and save all the information you find: ${url}`;
+      await sendMessage();
+
+      statusEl.textContent = 'Import started - check the chat for progress';
+      statusEl.style.color = '#4CAF50';
+    }
+
+    // ===== BOOTSTRAP FILES =====
+    async function refreshBootstrapFile(filename) {
+      if (!currentBusinessId) {
+        const key = filename.replace('.md', '').toLowerCase();
+        document.getElementById(`bootstrap-${key}-content`).value = '(Select a business first)';
+        document.getElementById(`bootstrap-${key}-status`).textContent = '';
+        return;
+      }
+
+      const key = filename.replace('.md', '').toLowerCase();
+      const statusEl = document.getElementById(`bootstrap-${key}-status`);
+      statusEl.textContent = 'Loading...';
+
+      try {
+        const response = await fetch(`${API_URL}/bootstrap/${currentBusinessId}/${filename}`);
+        const data = await response.json();
+
+        if (data.success) {
+          document.getElementById(`bootstrap-${key}-content`).value = data.content;
+          statusEl.textContent = `Last loaded: ${new Date().toLocaleTimeString()}`;
+          statusEl.style.color = '#4CAF50';
+        } else {
+          document.getElementById(`bootstrap-${key}-content`).value = data.content || '(File not found)';
+          statusEl.textContent = data.error || 'File not found';
+          statusEl.style.color = '#f44336';
+        }
+      } catch (error) {
+        statusEl.textContent = `Error: ${error.message}`;
+        statusEl.style.color = '#f44336';
+        addDebugLog(`Bootstrap load error: ${error.message}`, 'error');
+      }
+    }
+
+    async function saveBootstrapFile(filename) {
+      if (!currentBusinessId) {
+        alert('Select a business first');
+        return;
+      }
+
+      const key = filename.replace('.md', '').toLowerCase();
+      const content = document.getElementById(`bootstrap-${key}-content`).value;
+      const statusEl = document.getElementById(`bootstrap-${key}-status`);
+      statusEl.textContent = 'Saving...';
+
+      try {
+        const response = await fetch(`${API_URL}/bootstrap/${currentBusinessId}/${filename}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          statusEl.textContent = `Saved at ${new Date().toLocaleTimeString()}`;
+          statusEl.style.color = '#4CAF50';
+          addDebugLog(`Saved ${filename}`, 'success');
+        } else {
+          statusEl.textContent = `Error: ${data.error}`;
+          statusEl.style.color = '#f44336';
+        }
+      } catch (error) {
+        statusEl.textContent = `Error: ${error.message}`;
+        statusEl.style.color = '#f44336';
+        addDebugLog(`Bootstrap save error: ${error.message}`, 'error');
+      }
+    }
+
+    function loadAllBootstrapFiles() {
+      if (!currentBusinessId) return;
+      ['BUSINESS.md', 'ASSISTANT.md', 'SOUL.md', 'MEMORY.md', 'JOB_HISTORY.md'].forEach(f => {
+        refreshBootstrapFile(f);
+      });
+    }
+
+    // ===== QUOTING SKILL =====
+    async function refreshQuotingSkill() {
+      if (!currentBusinessId) {
+        document.getElementById('skillStatus').innerHTML = '<span style="color: #f5a623;">⚠️ Select a business first</span>';
+        return;
+      }
+
+      document.getElementById('skillStatus').innerHTML = '<span style="color: #999;"><i class="fas fa-spinner fa-spin"></i> Loading...</span>';
+
+      try {
+        const response = await fetch(`${API_URL}/skills/${currentBusinessId}/quoting`);
+        const data = await response.json();
+
+        if (data.success) {
+          renderQuotingSkill(data);
+        } else {
+          document.getElementById('skillStatus').innerHTML = `<span style="color: #999;">No quoting patterns learned yet. Chat with Baz to teach your pricing!</span>`;
+          document.getElementById('learnedPatterns').innerHTML = '';
+        }
+      } catch (error) {
+        console.error('Error loading quoting skill:', error);
+        document.getElementById('skillStatus').innerHTML = `<span style="color: #e74c3c;">Error loading skill: ${error.message}</span>`;
+      }
+    }
+
+    function renderQuotingSkill(data) {
+      const patterns = data.learned_patterns || [];
+      const isCustomized = data.skill?.is_customized || false;
+
+      // Update badge
+      const badge = document.getElementById('patternCountBadge');
+      if (patterns.length > 0) {
+        badge.textContent = patterns.length;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      // Status
+      const statusHtml = isCustomized
+        ? `<span style="color: #0066CC;">✓ Customized for your business</span> · <strong>${patterns.length}</strong> patterns learned`
+        : `<span style="color: #999;">Using default skill</span> · <strong>${patterns.length}</strong> patterns learned`;
+
+      document.getElementById('skillStatus').innerHTML = statusHtml;
+
+      // Patterns
+      if (patterns.length === 0) {
+        document.getElementById('learnedPatterns').innerHTML = `
+          <div style="padding: 24px; text-align: center; background: #f9f9f9; border-radius: 8px; color: #666;">
+            <i class="fas fa-lightbulb" style="font-size: 32px; color: #f5a623; margin-bottom: 12px;"></i>
+            <p style="margin: 0;"><strong>No patterns yet</strong></p>
+            <p style="font-size: 13px; margin-top: 8px;">Chat with Baz and tell him how you price jobs.<br>He'll capture your methodology here.</p>
+            <p style="font-size: 12px; margin-top: 12px; color: #999;">Try: "I charge $85 per metre for colorbond fencing"</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render patterns as cards
+      const patternsHtml = patterns.map((p, index) => {
+        const confidenceColor = {
+          'High': '#27ae60',
+          'Medium': '#f5a623',
+          'Low': '#e74c3c'
+        }[p.confidence] || '#999';
+
+        return `
+          <div class="memory-item" style="margin-bottom: 12px; border-left: 3px solid ${confidenceColor};">
+            <div class="memory-item-header">
+              <div class="memory-item-title" style="font-size: 14px;">
+                <strong>${p.name}</strong>
+                <span style="font-size: 11px; color: ${confidenceColor}; margin-left: 8px; text-transform: uppercase;">${p.confidence}</span>
+              </div>
+              <div style="font-size: 11px; color: #999;">${p.observed}</div>
+            </div>
+            <div style="font-size: 13px; margin-top: 8px;">
+              <div style="color: #666; margin-bottom: 4px;"><strong>When:</strong> ${p.trigger}</div>
+              <div style="color: #333; margin-bottom: 4px;"><strong>Rule:</strong> ${p.pattern}</div>
+              <div style="color: #0066CC; font-size: 12px; background: #f0ffff; padding: 6px 8px; border-radius: 4px; margin-top: 6px;">
+                <i class="fas fa-calculator"></i> <strong>Example:</strong> ${p.example}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('learnedPatterns').innerHTML = patternsHtml;
+    }
+
+    // ===== TOOLS =====
+    function renderTools() {
+      const container = document.getElementById('toolsList');
+
+      // Group tools by category
+      const grouped = {};
+      TOOLS.forEach(tool => {
+        const cat = tool.category || 'Other';
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(tool);
+      });
+
+      let html = '';
+      for (const [category, tools] of Object.entries(grouped)) {
+        html += `<h3 style="font-size: 14px; color: #666; margin: 16px 0 8px 0; text-transform: uppercase;">${category}</h3>`;
+        html += tools.map(tool => `
+          <div class="memory-item" style="margin-bottom: 8px;">
+            <div class="memory-item-header">
+              <div class="memory-item-title">
+                <i class="fas ${tool.icon}" style="color: var(--accent); margin-right: 8px;"></i> ${tool.name}
+              </div>
+            </div>
+            <div style="font-size: 13px; color: #666;">${tool.description}</div>
+          </div>
+        `).join('');
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ===== MEMORY =====
+    function addMemory(key, value) {
+      memory.push({
+        key,
+        value,
+        timestamp: new Date().toISOString()
+      });
+      saveState();
+      renderMemory();
+    }
+
+    function renderMemory() {
+      // Legacy function - memory is now in bootstrap files
+      // Keeping for backwards compatibility but no longer renders
+      return;
+    }
+
+    function clearMemory() {
+      if (confirm('Clear all memory?')) {
+        memory = [];
+        saveState();
+        renderMemory();
+      }
+    }
+
+    // ===== CONFIG =====
+    async function saveConfig() {
+      const systemPrompt = document.getElementById('systemPrompt').value;
+      localStorage.setItem('systemPrompt', systemPrompt);
+
+      // Push maxTokens to server
+      const maxTokens = parseInt(document.getElementById('configMaxTokens').value);
+      if (maxTokens >= 100 && maxTokens <= 8192) {
+        try {
+          await fetch(`${API_URL}/config/max-tokens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: maxTokens })
+          });
+        } catch (e) { console.warn('Failed to update maxTokens:', e); }
+      }
+
+      alert('Configuration saved!');
+      addDebugLog('Config saved', 'success');
+    }
+
+    // ===== DEBUG =====
+    function addDebugLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      debugLog.push({ timestamp, message, type });
+
+      const container = document.getElementById('debugLog');
+      const typeClass = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'tool' ? 'tool' : '';
+
+      container.innerHTML += `<div><span class="timestamp">[${timestamp}]</span> <span class="${typeClass}">${escapeHtml(message)}</span></div>`;
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearDebugLog() {
+      debugLog = [];
+      document.getElementById('debugLog').innerHTML = '<div class="timestamp">[Log cleared]</div>';
+    }
+
+    function updateStateView(data) {
+      document.getElementById('stateView').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    // ===== HEALTH CHECK =====
+    async function loadSystemPrompt() {
+      try {
+        const response = await fetch(`${API_URL}/system-prompt`);
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('systemPrompt').value = data.prompt;
+          addDebugLog('System prompt loaded from server', 'success');
+        } else {
+          document.getElementById('systemPrompt').value = 'Error loading system prompt: ' + data.error;
+        }
+      } catch (e) {
+        document.getElementById('systemPrompt').value = 'Failed to load system prompt: ' + e.message;
+        addDebugLog('Failed to load system prompt: ' + e.message, 'error');
+      }
+    }
+
+    async function checkHealth() {
+      try {
+        const response = await fetch(`${API_URL}/health`);
+        const data = await response.json();
+
+        const dot = document.getElementById('healthDot');
+        const text = document.getElementById('healthText');
+
+        if (data.status === 'healthy') {
+          dot.classList.remove('error');
+          text.textContent = 'Connected';
+          addDebugLog('Health check: OK', 'success');
+        } else {
+          dot.classList.add('error');
+          text.textContent = 'Error';
+          addDebugLog('Health check: Failed', 'error');
+        }
+      } catch (error) {
+        document.getElementById('healthDot').classList.add('error');
+        document.getElementById('healthText').textContent = 'Disconnected';
+        addDebugLog(`Health check error: ${error.message}`, 'error');
+      }
+    }
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed:', err));
+    }
+  </script>
+</body>
+</html>

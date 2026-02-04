@@ -1,0 +1,17 @@
+{
+  "90000": {
+    "job_id": "90000",
+    "status": "contacted",
+    "messages": [
+      {
+        "sender": "tradie",
+        "message": "Hi James, Paul from JPC Painting here. Saw your garden shed job in Dee Why. I'm based in Campbelltown so it's a bit of a trek for me, but I've got the skills and gear to do a quality job. Just want to check - is the $600 budget flexible at all? For prep, materials, and a proper exterior finish on timber, it'd likely come in a bit higher. Happy to chat through options if you're open to it. Cheers, Paul - 0488592524",
+        "type": "question",
+        "timestamp": "2026-02-03T13:42:22.740096"
+      }
+    ],
+    "site_visit": null,
+    "our_quote": null,
+    "customer_decision": null
+  }
+}

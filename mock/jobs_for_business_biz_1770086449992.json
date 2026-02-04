@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "jobs_count": 1,
+  "jobs": [
+    {
+      "job_id": "90000",
+      "name": "Living room - HIGH CEILINGS 3.5m",
+      "description": "Repaint living/dining open plan area. HIGH CEILINGS - 3.5m. Room is approximately 8m x 6m. Walls only, not doing ceiling. Good condition, just needs freshening up. Going from beige to white. Will need scaffolding or tall ladders.",
+      "subcategory": "Interior House Painting",
+      "size": "medium",
+      "suburb": "Campbelltown",
+      "state": "NSW",
+      "postcode": "2000",
+      "distance_km": 2.1,
+      "budget_min": null,
+      "budget_max": null,
+      "budget_display": "No budget set",
+      "timeline": "This month",
+      "availability": "Mornings",
+      "posted_ago": "22 hours ago",
+      "posted_at": "2026-02-02T16:02:41.925000",
+      "customer": {
+        "name": "Emma King",
+        "first_name": "Emma",
+        "phone": "0410 653 974",
+        "verified": true,
+        "member_since": "2023",
+        "jobs_posted": 10,
+        "contact_preference": "either"
+      },
+      "attachments": [],
+      "lead_score": 76,
+      "urgency": "normal",
+      "intent": "ready_to_hire",
+      "status": "quoting",
+      "our_response": null,
+      "conversation": [],
+      "outcome": null
+    }
+  ]
+}
