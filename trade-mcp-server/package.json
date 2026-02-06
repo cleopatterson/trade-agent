@@ -1,0 +1,17 @@
+{
+  "name": "ss-trade-mcp-server",
+  "version": "1.0.0",
+  "description": "Trade/Provider MCP Server for ServiceSeeking - profile management, job review, and quoting tools",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

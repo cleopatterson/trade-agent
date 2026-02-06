@@ -33,12 +33,14 @@ loadEnv(path.resolve(__dirname, "../.env"));
 loadEnv(path.resolve(__dirname, "../../.env"));
 
 // All data dirs now live under trade_agent_ts/ (sibling to src/)
-// On Railway, paths resolve relative to cwd
+// On Railway, use a single volume mount for all persistent data
 const isRailway = !!process.env.RAILWAY_ENVIRONMENT;
+const railwayDataDir = process.env.RAILWAY_DATA_DIR || "/app/data";
 
-function resolvePath(localPath: string, railwayPath: string): string {
+function resolvePath(localPath: string, railwaySubdir: string): string {
   if (!isRailway) return path.resolve(__dirname, localPath);
-  return path.resolve(process.cwd(), railwayPath);
+  // On Railway, all persistent data lives under the single volume mount
+  return path.join(railwayDataDir, railwaySubdir);
 }
 
 export const CONFIG: {
@@ -54,16 +56,34 @@ export const CONFIG: {
   mockDir: string;
   skillsDir: string;
 } = {
-  port: parseInt(process.env.PORT || process.env.TRADE_TS_PORT || "8002"),
+  port: parseInt(process.env.TRADE_TS_PORT || "8002"),
   model: "claude-sonnet-4-5-20250929" as const,
   temperature: 0.2,
   maxTokens: parseInt(process.env.MAX_TOKENS || "300"),
   maxIterations: 10,
   brevityMode: process.env.BREVITY_MODE !== 'false',
 
-  tradeAgentDir: resolvePath("..", "."),
-  bootstrapDir: resolvePath("../bootstrap", "./bootstrap"),
-  memoryDir: resolvePath("../memory", "./memory"),
-  mockDir: resolvePath("../../resources/mock", "./mock"),
-  skillsDir: resolvePath("../skills", "./skills"),
+  tradeAgentDir: resolvePath("..", ""),
+  bootstrapDir: resolvePath("../bootstrap", "bootstrap"),
+  memoryDir: resolvePath("../memory", "memory"),
+  mockDir: resolvePath("../../resources/mock", "mock"),
+  skillsDir: resolvePath("../skills", "skills"),
 };
+
+// Initialize data directories on Railway (creates them if they don't exist)
+export function initDataDirs(): void {
+  if (!isRailway) return;
+
+  console.log(`[Config] Railway environment detected`);
+  console.log(`[Config] Data directory: ${railwayDataDir}`);
+
+  const dirs = [CONFIG.bootstrapDir, CONFIG.memoryDir, CONFIG.skillsDir];
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`[Config] Created directory: ${dir}`);
+    } else {
+      console.log(`[Config] Directory exists: ${dir}`);
+    }
+  }
+}

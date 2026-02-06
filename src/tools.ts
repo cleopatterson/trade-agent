@@ -15,6 +15,16 @@ import {
   updateBusinessSection,
   type MockJob,
 } from "./bootstrap.js";
+import {
+  findSuburb,
+  findSuburbByPostcode,
+  getSuburbsInRadius,
+  getDistanceBetweenSuburbs,
+  getAreasInRegion,
+  getAreaBreakdownInRadius,
+  loadSuburbs,
+  type Suburb,
+} from "./geo.js";
 import fs from "fs";
 import path from "path";
 import { CONFIG } from "./config.js";
@@ -392,7 +402,7 @@ export function createTools(businessId: string): AgentTool<any>[] {
     {
       name: "add_memory_note",
       label: "Add Memory Note",
-      description: "Add a note to memory.",
+      description: "Add an insight or observation to memory (MEMORY.md). Use this for patterns, preferences, and context you've learned. NOT for configuration like service areas or services — use remember_business_info for those.",
       parameters: Type.Object({
         category: Type.String({ description: "Category of the note" }),
         note: Type.String({ description: "The note to save" }),
@@ -445,9 +455,9 @@ export function createTools(businessId: string): AgentTool<any>[] {
     {
       name: "remember_business_info",
       label: "Remember Business Info",
-      description: "Remember important info about the business. Routes to the correct file: assistant personality goes to ASSISTANT.md, communication/work style goes to SOUL.md, everything else to BUSINESS.md (in the right section).",
+      description: "Save business configuration to BUSINESS.md. Use for: service_area, areas_covered, areas_avoided, services, specialties, pricing, availability, etc. Routes to the correct section. For insights/observations, use add_memory_note instead.",
       parameters: Type.Object({
-        field: Type.String({ description: "The type of information. Use exact field names: communication_style, work_style, messaging_style (→ SOUL.md) | assistant_name, vibe (→ ASSISTANT.md) | quote_style, materials, include_gst, estimate_style (→ Quoting Preferences) | working_days, typical_hours, current_workload (→ Availability) | preferred_job_size, red_flags, jobs_love, jobs_avoid (→ Job Preferences) | services, specialties (→ Services) | minimum, hourly_rate, day_rate (→ Pricing) | service_area, primary_suburbs (→ Service Areas)" }),
+        field: Type.String({ description: "The type of information. Use exact field names: communication_style, work_style, messaging_style (→ SOUL.md) | assistant_name, vibe (→ ASSISTANT.md) | quote_style, materials, include_gst, estimate_style (→ Quoting Preferences) | working_days, typical_hours, current_workload (→ Availability) | preferred_job_size, red_flags, jobs_love, jobs_avoid (→ Job Preferences) | services, specialties, services_excluded (→ Services & Specialties) | minimum, hourly_rate, day_rate (→ Pricing) | base_suburb, service_radius, areas_covered, areas_avoided, travel_notes (→ Service Areas)" }),
         value: Type.String({ description: "The value to remember" }),
       }),
       execute: async (_id: string, params: any) => {
@@ -518,13 +528,22 @@ export function createTools(businessId: string): AgentTool<any>[] {
           minimum: { section: "Pricing", mdField: "Minimum Job Value" },
           minimum_job: { section: "Pricing", mdField: "Minimum Job Value" },
           // Service Areas
-          service_area: { section: "Service Areas", mdField: "Service Area" },
-          max_travel: { section: "Service Areas", mdField: "Max Travel Distance" },
-          travel_fee: { section: "Service Areas", mdField: "Travel Fee Outside Primary" },
-          primary_suburbs: { section: "Service Areas", mdField: "Primary Suburbs" },
+          service_area: { section: "Service Areas", mdField: "Areas You Cover" },
+          areas_covered: { section: "Service Areas", mdField: "Areas You Cover" },
+          areas_you_cover: { section: "Service Areas", mdField: "Areas You Cover" },
+          areas_avoided: { section: "Service Areas", mdField: "Areas You Avoid" },
+          areas_you_avoid: { section: "Service Areas", mdField: "Areas You Avoid" },
+          service_radius: { section: "Service Areas", mdField: "Service Radius" },
+          base_suburb: { section: "Service Areas", mdField: "Base Suburb" },
+          travel_notes: { section: "Service Areas", mdField: "Travel Notes" },
+          primary_suburbs: { section: "Service Areas", mdField: "Base Suburb" },
+          max_travel: { section: "Service Areas", mdField: "Service Radius" },
           // Services
           services: { section: "Services & Specialties", mdField: "Services" },
           specialties: { section: "Services & Specialties", mdField: "Specialties" },
+          services_excluded: { section: "Services & Specialties", mdField: "Work They Don't Do" },
+          dont_do: { section: "Services & Specialties", mdField: "Work They Don't Do" },
+          excluded_services: { section: "Services & Specialties", mdField: "Work They Don't Do" },
           // Quoting
           quote_style: { section: "Quoting Preferences", mdField: "Quote Format" },
           quote_format: { section: "Quoting Preferences", mdField: "Quote Format" },
@@ -579,19 +598,20 @@ export function createTools(businessId: string): AgentTool<any>[] {
       },
     },
 
-    // 13. complete_first_session
+    // 13. complete_lead_setup
     {
-      name: "complete_first_session",
-      label: "Complete First Session",
-      description: "Mark the first session as complete.",
+      name: "complete_lead_setup",
+      label: "Complete Lead Setup",
+      description: "Mark the 'Get the Right Leads' onboarding as complete. Call this when service area and subcategories are set up.",
       parameters: Type.Object({}),
       execute: async () => {
-        const firstSessionPath = path.join(CONFIG.bootstrapDir, businessId, "FIRST_SESSION.md");
+        // Delete the onboarding file - that's all that's needed
+        const leadSetupPath = path.join(CONFIG.bootstrapDir, businessId, "GET_THE_RIGHT_LEADS.md");
         try {
-          fs.unlinkSync(firstSessionPath);
-          return result({ success: true, was_first_session: true, message: "First session complete!" });
+          fs.unlinkSync(leadSetupPath);
+          return result({ success: true, message: "Lead setup complete." });
         } catch {
-          return result({ success: true, was_first_session: false, message: "Already met." });
+          return result({ success: true, message: "Already complete." });
         }
       },
     },
@@ -610,6 +630,210 @@ export function createTools(businessId: string): AgentTool<any>[] {
         const jobName = job?.name || `Job ${params.job_id}`;
         updateMemory(businessId, `Job ${params.outcome.charAt(0).toUpperCase() + params.outcome.slice(1)}`, jobName);
         return result({ success: true, job_id: params.job_id, job_name: jobName, outcome: params.outcome });
+      },
+    },
+
+    // ────────── GEO TOOLS ──────────
+
+    // 15. get_suburbs_in_radius
+    {
+      name: "get_suburbs_in_radius",
+      label: "Get Suburbs in Radius",
+      description: "Find all suburbs within a certain distance of a base suburb. Use this to help tradies define their service area.",
+      parameters: Type.Object({
+        suburb: Type.String({ description: "Base suburb name (e.g., 'Balgowlah', 'Parramatta')" }),
+        radius_km: Type.Number({ description: "Radius in kilometers (e.g., 15, 25)" }),
+        state: Type.Optional(Type.String({ description: "Filter by state (e.g., 'NSW'). Defaults to NSW." })),
+        limit: Type.Optional(Type.Number({ description: "Max results to return. Default 50." })),
+      }),
+      execute: async (_id: string, params: any) => {
+        const baseSuburb = findSuburb(params.suburb, params.state || "NSW");
+        if (!baseSuburb) {
+          return errorResult(`Suburb '${params.suburb}' not found. Try a different spelling or nearby suburb.`);
+        }
+
+        const nearby = getSuburbsInRadius(baseSuburb, params.radius_km, {
+          state: params.state || "NSW",
+          limit: params.limit || 50,
+        });
+
+        // Group by area for easier reading
+        const byArea = getAreaBreakdownInRadius(baseSuburb, params.radius_km);
+
+        return result({
+          success: true,
+          base_suburb: {
+            name: baseSuburb.name,
+            postcode: baseSuburb.postcode,
+            area: baseSuburb.area,
+            region: baseSuburb.region,
+          },
+          radius_km: params.radius_km,
+          total_suburbs: nearby.length,
+          by_area: byArea,
+          suburbs: nearby.slice(0, params.limit || 50).map((s) => ({
+            name: s.name,
+            postcode: s.postcode,
+            area: s.area,
+            distance_km: s.distance_km,
+          })),
+        });
+      },
+    },
+
+    // 16. get_distance_to_suburb
+    {
+      name: "get_distance_to_suburb",
+      label: "Get Distance to Suburb",
+      description: "Calculate the straight-line distance between two suburbs. Useful for checking if a job is within service area.",
+      parameters: Type.Object({
+        from_suburb: Type.String({ description: "Starting suburb (e.g., tradie's base)" }),
+        to_suburb: Type.String({ description: "Destination suburb (e.g., job location)" }),
+      }),
+      execute: async (_id: string, params: any) => {
+        const from = findSuburb(params.from_suburb, "NSW");
+        const to = findSuburb(params.to_suburb, "NSW");
+
+        if (!from) return errorResult(`Suburb '${params.from_suburb}' not found.`);
+        if (!to) return errorResult(`Suburb '${params.to_suburb}' not found.`);
+
+        const distance = getDistanceBetweenSuburbs(from, to);
+
+        // Determine if same area/region
+        const sameArea = from.area === to.area;
+        const sameRegion = from.region === to.region;
+
+        // Estimate travel time (rough: 2min/km urban, adjusted for Sydney traffic)
+        const estimatedMinutes = Math.round(distance * 2.5);
+
+        return result({
+          success: true,
+          from: { name: from.name, postcode: from.postcode, area: from.area },
+          to: { name: to.name, postcode: to.postcode, area: to.area },
+          distance_km: distance,
+          same_area: sameArea,
+          same_region: sameRegion,
+          estimated_drive_minutes: estimatedMinutes,
+          note: sameArea
+            ? "Same area - easy travel"
+            : sameRegion
+              ? "Same region - reasonable travel"
+              : "Different regions - check travel route",
+        });
+      },
+    },
+
+    // 17. get_sydney_areas
+    {
+      name: "get_sydney_areas",
+      label: "Get Sydney Areas",
+      description: "Get all Sydney areas/regions with suburb counts. Use to understand Sydney's geography and help tradies choose service areas.",
+      parameters: Type.Object({}),
+      execute: async () => {
+        const areas = getAreasInRegion("Sydney");
+
+        return result({
+          success: true,
+          region: "Sydney",
+          total_areas: areas.length,
+          areas: areas.map((a) => ({
+            area: a.area,
+            suburb_count: a.suburb_count,
+            sample_suburbs: a.sample_suburbs,
+          })),
+          tip: "The Sydney Service Area Guide is in your context. Use get_suburbs_in_radius to explore specific areas in detail.",
+        });
+      },
+    },
+
+    // 18. check_job_in_service_area
+    {
+      name: "check_job_in_service_area",
+      label: "Check Job in Service Area",
+      description: "Check if a job's suburb is within the tradie's service area. Returns distance and whether it's in core or extended range.",
+      parameters: Type.Object({
+        job_id: Type.String({ description: "The job to check" }),
+        base_suburb: Type.Optional(Type.String({ description: "Tradie's base suburb. Uses BUSINESS.md if not provided." })),
+        core_radius_km: Type.Optional(Type.Number({ description: "Core service radius in km. Default 15." })),
+        extended_radius_km: Type.Optional(Type.Number({ description: "Extended radius for big jobs. Default 30." })),
+      }),
+      execute: async (_id: string, params: any) => {
+        const job = getJobById(businessId, params.job_id);
+        if (!job) return errorResult(`Job ${params.job_id} not found`);
+
+        // Get base suburb from params or BUSINESS.md
+        let baseSuburbName = params.base_suburb;
+        if (!baseSuburbName) {
+          try {
+            const bizPath = path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md");
+            const content = fs.readFileSync(bizPath, "utf-8");
+            const match = content.match(/\*\*(?:Base Suburb|Primary Suburbs|Location|Suburb):\*\*\s*([^\n]+)/i);
+            if (match) baseSuburbName = match[1].trim().split(",")[0].trim();
+          } catch { /* use default */ }
+        }
+
+        if (!baseSuburbName) {
+          return errorResult("No base suburb specified and couldn't find in BUSINESS.md");
+        }
+
+        const baseSuburb = findSuburb(baseSuburbName, "NSW");
+        if (!baseSuburb) {
+          return errorResult(`Base suburb '${baseSuburbName}' not found`);
+        }
+
+        // Find job suburb
+        const jobSuburb = job.suburb ? findSuburb(job.suburb, "NSW") : null;
+        if (!jobSuburb) {
+          return result({
+            success: true,
+            job_id: params.job_id,
+            job_suburb: job.suburb || "unknown",
+            in_service_area: "unknown",
+            note: `Couldn't find suburb '${job.suburb}' in database`,
+          });
+        }
+
+        const distance = getDistanceBetweenSuburbs(baseSuburb, jobSuburb);
+
+        // Read service radius from BUSINESS.md if not provided
+        let defaultRadius = 20;
+        try {
+          const bizPath = path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md");
+          const content = fs.readFileSync(bizPath, "utf-8");
+          const radiusMatch = content.match(/\*\*Service Radius:\*\*\s*(\d+)/i);
+          if (radiusMatch) defaultRadius = parseInt(radiusMatch[1]);
+        } catch { /* use default */ }
+
+        const coreRadius = params.core_radius_km || defaultRadius;
+        const extendedRadius = params.extended_radius_km || Math.round(defaultRadius * 1.5);
+
+        let inServiceArea: "core" | "extended" | "outside";
+        let recommendation: string;
+
+        if (distance <= coreRadius) {
+          inServiceArea = "core";
+          recommendation = "Within core service area - good to quote";
+        } else if (distance <= extendedRadius) {
+          inServiceArea = "extended";
+          recommendation = "In extended range - consider for larger jobs only";
+        } else {
+          inServiceArea = "outside";
+          recommendation = "Outside service area - consider skipping unless exceptional job";
+        }
+
+        return result({
+          success: true,
+          job_id: params.job_id,
+          job_name: job.name,
+          from: { suburb: baseSuburb.name, area: baseSuburb.area },
+          to: { suburb: jobSuburb.name, area: jobSuburb.area },
+          distance_km: distance,
+          core_radius_km: coreRadius,
+          extended_radius_km: extendedRadius,
+          in_service_area: inServiceArea,
+          same_area: baseSuburb.area === jobSuburb.area,
+          recommendation,
+        });
       },
     },
   ];

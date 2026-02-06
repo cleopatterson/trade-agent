@@ -8,7 +8,7 @@ import http from "http";
 import https from "https";
 import fs from "fs";
 import multer from "multer";
-import { CONFIG } from "./config.js";
+import { CONFIG, initDataDirs } from "./config.js";
 import { createAgentSession, chat, chatStream, TRADE_ASSISTANT_PROMPT_STATIC, type AgentSession } from "./agent.js";
 import {
   VALID_FILENAMES,
@@ -439,8 +439,8 @@ app.get("/jobs/:businessId", (req, res) => {
     })();
 
     const trade = parseBusinessField(businessContent, "Trade") || "";
-    const primarySuburbs = parseBusinessField(businessContent, "Primary Suburbs");
-    const location = primarySuburbs ? primarySuburbs.split(",")[0].trim() + ", NSW" : "Sydney, NSW";
+    const baseSuburb = parseBusinessField(businessContent, "Base Suburb") || parseBusinessField(businessContent, "Primary Suburbs");
+    const location = baseSuburb ? baseSuburb.split(",")[0].trim() + ", NSW" : "Sydney, NSW";
 
     let jobs = loadMockJobs(businessId);
 
@@ -510,8 +510,8 @@ app.post("/jobs/:businessId/refresh", (req, res) => {
     const trades = tradeRaw.split(",").map((t) => t.trim().toLowerCase());
     const trade = trades.find((t) => t.includes("paint")) || trades[0] || "painting";
 
-    const primarySuburbs = parseBusinessField(businessContent, "Primary Suburbs");
-    const location = primarySuburbs ? primarySuburbs.split(",")[0].trim() + ", NSW" : "Sydney, NSW";
+    const baseSuburb = parseBusinessField(businessContent, "Base Suburb") || parseBusinessField(businessContent, "Primary Suburbs");
+    const location = baseSuburb ? baseSuburb.split(",")[0].trim() + ", NSW" : "Sydney, NSW";
 
     const existingJobs = loadMockJobs(businessId);
     const result = generateFakeMatchedJobs(trade, location);
@@ -619,21 +619,36 @@ app.post("/import-profile", async (req, res) => {
     if (profile.phone) updateBusinessField(business_id, "Phone", profile.phone);
     if (profile.email) updateBusinessField(business_id, "Email", profile.email);
     if (profile.description) updateBusinessSection(business_id, "What Makes You Different", profile.description);
-    if (profile.location) updateBusinessField(business_id, "Primary Suburbs", profile.location);
+    if (profile.location) updateBusinessField(business_id, "Base Suburb", profile.location);
     if (profile.abn) updateBusinessField(business_id, "ABN", profile.abn);
     if (profile.license) updateBusinessField(business_id, "License Number", profile.license);
     if (profile.member_since) updateBusinessField(business_id, "Years in Business", `Member since ${profile.member_since}`);
 
-    // Filter services to get trade
+    // Filter services to get trade and populate services section
     const services = profile.services || [];
     const filteredServices = services.filter((s) => !["IDENTITY", "LICENCED", "ABN", "AWARD", "VERIFIED"].includes(s.toUpperCase()));
     if (filteredServices.length) {
-      updateBusinessField(business_id, "Trade", filteredServices.slice(0, 3).join(", "));
+      // Detect category from subcategories
+      const servicesLower = filteredServices.map(s => s.toLowerCase()).join(" ");
+      let category = "Trade";
+      if (servicesLower.includes("paint")) category = "Painting";
+      else if (servicesLower.includes("plumb")) category = "Plumbing";
+      else if (servicesLower.includes("electric")) category = "Electrical";
+      else if (servicesLower.includes("carpent") || servicesLower.includes("cabinet")) category = "Carpentry";
+      else if (servicesLower.includes("roof")) category = "Roofing";
+      else if (servicesLower.includes("floor") || servicesLower.includes("tile")) category = "Flooring";
+      else if (servicesLower.includes("clean")) category = "Cleaning";
+      else if (servicesLower.includes("landscape") || servicesLower.includes("garden")) category = "Landscaping";
+      else if (servicesLower.includes("build") || servicesLower.includes("renovate")) category = "Building";
+
+      // Trade field: the category
+      updateBusinessField(business_id, "Trade", category);
+      // Services & Specialties: ALL subcategories
+      updateBusinessSection(business_id, "Services & Specialties", "Services", filteredServices.join(", "));
     }
 
-    // Random travel distance
-    const travelDistance = [10, 15, 20][Math.floor(Math.random() * 3)];
-    updateBusinessField(business_id, "Max Travel Distance", `${travelDistance}km`);
+    // Default 20km service radius
+    updateBusinessField(business_id, "Service Radius", "20km");
 
     // Save logo and extract brand color
     if (profile.logo_url) {
@@ -1106,6 +1121,8 @@ app.get("/system-prompt", (_req, res) => {
 });
 
 // ────────── Start ──────────
+initDataDirs(); // Create data directories on Railway if needed
+
 app.listen(CONFIG.port, () => {
   console.log(`Trade Assistant TS (pi-agent) running on port ${CONFIG.port}`);
   console.log(`Dashboard: http://localhost:${CONFIG.port}/static/trade-dashboard.html`);

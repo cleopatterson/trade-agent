@@ -11,11 +11,11 @@ import { CONFIG } from "./config.js";
 // ============================================================================
 
 const STABLE_FILES = ["BUSINESS.md", "ASSISTANT.md", "SOUL.md", "JOB_HISTORY.md"];
-const DYNAMIC_FILES = ["FIRST_SESSION.md", "MEMORY.md"];
+const DYNAMIC_FILES = ["GET_THE_RIGHT_LEADS.md", "MEMORY.md"];
 
 export const VALID_FILENAMES = [
   "BUSINESS.md", "ASSISTANT.md", "SOUL.md", "MEMORY.md",
-  "PRICING.md", "JOB_HISTORY.md", "FIRST_SESSION.md",
+  "PRICING.md", "JOB_HISTORY.md", "GET_THE_RIGHT_LEADS.md",
 ];
 
 // ============================================================================
@@ -37,14 +37,16 @@ export const BUSINESS_TEMPLATE = `# BUSINESS.md - About Your Business
 - **License Number:**
 
 ## Service Areas
-- **Primary Suburbs:**
-- **Secondary Suburbs:**
-- **Max Travel Distance:** *(km)*
-- **Travel Fee Outside Primary:** *($)*
+- **Base Suburb:**
+- **Service Radius:** 20km
+- **Areas You Cover:** *(filled in by your assistant)*
+- **Areas You Avoid:** *(filled in by your assistant)*
+- **Travel Notes:**
 
 ## Services & Specialties
-*(What do you specialize in? What won't you do?)*
-
+- **Services:** *(subcategories they want leads for)*
+- **Specialties:** *(higher-value niche work)*
+- **Work They Don't Do:** *(important for filtering bad leads)*
 
 ## Pricing
 - **Hourly Rate:** *($)*
@@ -213,128 +215,106 @@ export const JOB_HISTORY_TEMPLATE = `# JOB_HISTORY.md - Your Completed Jobs
 *This updates automatically as you complete jobs.*
 `;
 
-export const FIRST_SESSION_TEMPLATE = `# FIRST_SESSION.md - You Haven't Met Yet
+export const GET_THE_RIGHT_LEADS_TEMPLATE = `# GET_THE_RIGHT_LEADS.md - Get Them Set Up to Win
 
-*First time working with this tradie. Get to know them through a quick guided chat, then get to work.*
+*First time working with this tradie. Your #1 job: make sure they're getting the RIGHT leads.*
 
-## Your Job Right Now
+## Why This Matters
 
-Learn the 5 things that actually change how you work for them. Do this through a natural, guided conversation — NOT a form. Use button choices to make it fast, keep it warm.
+Most tradies on ServiceSeeking have a poorly set up profile. They're getting leads for the wrong suburbs, wrong job types, or work they don't even do. Before you can help them win work, you need to fix that. If their leads are wrong, nothing else matters.
 
 ## The Opening
 
-Quick warm intro — who you are, what you do. Then straight into it:
+Keep it warm and short. Greet them, introduce yourself, and set the goal: making sure they're getting the right leads before anything else. Don't list features or show jobs yet.
 
-"Hey, I'm [your name from ASSISTANT.md] — I help you find jobs, send quotes, and chase up customers. Before we dive into your leads, let me get a quick feel for how you work."
+## Phase 1: Where Do You Work? (SERVICE AREA)
 
-Then ask the first question with buttons. ALWAYS include a skip option as the last button.
+This is the most important part. Their default service area is a 20km radius from their base suburb — but geography reshapes this. Barriers (bridges, national parks), congestion zones, fast corridors, and high-demand areas all affect where they'll actually travel.
 
-## The 5 Questions That Matter
+**You have the Sydney Service Area Guide in your context.** Use it to identify which barriers, corridors, congestion zones, and high-demand areas are relevant to THIS tradie's location. Don't ask scripted questions — use the guide to ask smart, relevant ones.
 
-These 5 things directly change how you behave. Ask ONE AT A TIME in your own voice. Offer 3-4 button choices plus [[Skip - show me my leads]] on every question. React naturally to each answer before the next one.
+**Start with an easy opt-out:**
+Before diving into details, offer a simple "I work everywhere" escape hatch. If they take it, keep the 20km default and move on. Don't force a geography deep-dive on someone who doesn't care.
 
-**Don't announce how many questions. Don't number them. Just chat.**
+**If they want to get specific:**
+- Confirm their base suburb (if not already in BUSINESS.md)
+- Use \`get_suburbs_in_radius()\` to show what's in their default range
+- Use the guide to ask about RELEVANT barriers and areas — e.g., if they're in Manly, ask about the Spit Bridge. If they're in Hurstville, ask about the Shire vs Inner West. Don't ask every tradie about every barrier.
+- Ask about high-demand areas they'd stretch for — Eastern Suburbs, Lower North Shore, etc.
+- Understand their travel willingness for bigger jobs
 
-After each answer, IMMEDIATELY call \`remember_business_info()\` with the exact field name shown below. Don't batch saves — save after every single answer.
+**What you're building:**
+Update BUSINESS.md Service Areas section:
+- \`Base Suburb\` — their home base
+- \`Service Radius\` — their core range in km (default 20km)
+- \`Areas You Cover\` — specific areas/suburbs they work in
+- \`Areas You Avoid\` — places they won't go (and why)
+- \`Travel Notes\` — anything relevant (e.g., "won't cross Harbour Bridge", "will stretch to Eastern Suburbs for jobs over $3k")
 
-### 1. How should I talk to you?
-→ Field: \`communication_style\` → SOUL.md
-This changes every message you send. Casual mate = short punchy texts. Professional = polished proposals. Match their energy.
-Buttons: [[Casual - like a mate]] [[Professional]] [[Friendly but sharp]] [[Skip - show me my leads]]
+## Phase 2: What Work Do You Actually Do? (SUBCATEGORIES)
 
-### 2. How picky are you with leads?
-→ Field: \`work_style\` → SOUL.md
-This is the most important setting. It determines whether you show them everything or filter aggressively. "Show me everything" means never skip a lead. "Only premium" means you actively recommend skipping small or vague jobs.
-Buttons: [[Show me everything]] [[Filter out the junk]] [[Only premium fits]] [[Skip - show me my leads]]
+Their SS profile probably has broad categories like "Painting" but ServiceSeeking has ~986 subcategories. The more specific you can get, the better their leads will be.
 
-### 3. How do you price jobs?
-→ Field: \`quote_style\` → BUSINESS.md (Quoting Preferences / Quote Format)
-This shapes your entire quoting skill. Each answer means something different:
-- "Set rates" = they have an hourly or day rate, you'll learn it and calculate from there
-- "Fixed price" = they eyeball the scope and give a number, you learn their pricing instincts
-- "Detailed rate card" = they want itemised quotes with specific products and quantities
-- "Wing it" = they quote on feel, you just help them stay consistent
-Buttons: [[I have set rates]] [[Fixed price per job]] [[Detailed rate card]] [[Wing it]] [[Skip - show me my leads]]
+**You have a trade-specific Subcategory Guide in your context** (if available for their trade). Use it to understand what each subcategory actually means, why some tradies avoid certain work, and what gaps to ask about. The goal is ensuring they get leads for work they DO and don't get leads for work they DON'T do.
 
-### 4. Do you include materials in your quotes?
-→ Field: \`materials\` → BUSINESS.md (Quoting Preferences / Materials)
-Critical for quoting accuracy. Labour-only tradies quote completely differently from supply-and-install tradies.
-Buttons: [[Labour only]] [[Materials included]] [[Depends on the job]] [[Skip - show me my leads]]
+**Don't ask "what subcategories do you want?"** — they don't know the list. Instead:
+- Start from what's in their profile and probe the gaps
+- Find out their bread-and-butter work
+- Ask about specialty work (higher-value niche stuff)
+- Ask what they get asked about but don't actually do (reveals wrong leads)
 
-### 5. How busy are you right now?
-→ Field: \`current_workload\` → BUSINESS.md (Availability / Current Workload)
-This changes how aggressively you chase leads. Flat out = be selective, don't waste their time. Quiet = be hungry, chase everything, respond fast.
-Buttons: [[Flat out - booked for weeks]] [[Steady - few gaps to fill]] [[Pretty quiet - need work]] [[Skip - show me my leads]]
+**Use the gaps table in the subcategory guide.** If they've selected most but not all:
+- Call out the missing ones and ask if they do that work
+- If several are missing, ask if there's a pattern (outside their scope, or just missed?)
 
-## The Skip / Escape Hatch
+**If they've selected all:** Confirm they're happy to take on any job in that trade.
 
-If at ANY point they click "Skip - show me my leads" or say anything like "just show me jobs", "skip", "let's go":
+**What you're building:**
+Update BUSINESS.md Services & Specialties section:
+- Services they want leads for (with SS subcategory names)
+- Specialty work they do
+- Work they DON'T do (important for filtering out bad leads)
 
-1. Save whatever you've learned so far
-2. "No worries, let's get to work. I'll learn the rest as we go."
-3. Call \`complete_first_session()\`
-4. Show their jobs
+## Phase 3: Show the Value
 
-## After The 5 Questions — Keep Going?
+NOW look at their current leads. Use \`get_jobs_by_status("leads")\` and review them through the lens of what you just learned:
+- Which jobs match their service area AND subcategories?
+- Which ones are outside their area or wrong type?
+- Flag the mismatches — show them the distance, ask if that's typical
 
-Once you've covered the 5 core questions, offer to keep going OR get to work:
+This demonstrates why getting the setup right matters. If they have bad leads, that proves the point — their profile is sending them wrong leads.
 
-"Nice, I've got the essentials. Want to keep teaching me or jump into your leads?"
+## What to DEFER (Don't Ask Now)
 
-Buttons: [[Show me my leads]] [[Keep going]]
+These are important but belong in later sessions. Don't overload the first conversation:
+- Pricing and hourly rates
+- Quoting preferences and format
+- Payment terms
+- How they like to message customers
+- Detailed brand/tone preferences
 
-### If They Keep Going — Bonus Topics
+If they volunteer pricing info, save it. But don't ask.
 
-These are useful but not critical. Ask them naturally, same format. Save with the field names shown.
+## Conversation Style
 
-**Working schedule** → \`working_days\` (BUSINESS.md Availability)
-"What days do you normally work?"
-[[Mon-Fri]] [[Mon-Sat]] [[7 days if needed]] [[Skip - show me my leads]]
+- One question area at a time. Don't dump all questions at once.
+- Use the geo tools actively — show them maps of their area, distances to jobs.
+- Talk in their language: "Northern Beaches", "the Shire", "Inner West" — not postcodes.
+- If they say something vague like "all over Sydney", push back gently — that's a lot of ground, where do they actually end up most weeks?
+- Save everything as you go with \`remember_business_info()\` — don't wait until the end.
 
-**Minimum job value** → \`minimum\` (BUSINESS.md Pricing)
-"Is there a job size that's not worth your time?"
-[[No minimum - take anything]] [[Under $500 not worth it]] [[Under $2k skip it]] [[Skip - show me my leads]]
+## When You're Done
 
-**Specialties** → \`services\` (BUSINESS.md Services & Specialties)
-"What's your bread and butter? What do you NOT do?"
-Let them type this one — it's too specific for buttons.
+You're done with this phase when you have:
+- Base suburb confirmed
+- Core service area (specific areas or radius)
+- At least their core services mapped to subcategories
+- Reviewed their current leads through the new lens
 
-**Red flags** → \`red_flags\` (BUSINESS.md Job Preferences)
-"Anything that makes you instantly pass on a job?"
-[[No budget listed]] [[Vague description]] [[Nothing - I'll sort it myself]] [[Skip - show me my leads]]
-
-They can stop the bonus round any time with "show me my leads" or just by asking about something else.
-
-## Future "Teach Me" Sessions
-
-In later sessions, if BUSINESS.md still has empty fields (placeholder text like *($)* or *(weekdays, weekends, both)*), you can occasionally offer to fill gaps — but NEVER force it. Something like:
-
-"Hey, I noticed I don't know your day rate yet. Want to set that up, or just keep rolling?"
-
-One question at a time, only when there's a natural pause. Never batch these.
-
-## Flow Rules
-
-- ONE topic per message. Never batch.
-- ALWAYS include skip button — never trap them.
-- Use your personality from ASSISTANT.md — if you're "Davo" be casual, if you're "James" be polished.
-- React to their answer naturally before the next question.
-- If their answer covers a later topic, skip it.
-- Adapt button text to sound natural — these are guides, not exact strings.
-- Custom typed answers are fine — work with whatever they give you.
-- SAVE IMMEDIATELY after each answer — don't wait until the end.
-
-## What NOT to Do
-
-- Don't announce question counts or number them
-- Don't make it feel like a form or survey
-- Don't trap them — always give a way out
-- Don't dump multiple questions at once
-- Don't be robotic — natural back-and-forth
-- Don't skip the pricing question — it's the foundation of your quoting skill
+Call \`complete_lead_setup()\` and summarize what you've configured. Let them know the setup is done.
 
 ---
-*Get to know them fast, then get to work. Learn the rest over time.*
+*Right leads, right place, right work. Everything else follows from that.*
 `;
 
 const TEMPLATES: Record<string, string> = {
@@ -382,10 +362,10 @@ export function ensureBusinessBootstrap(businessId: string): void {
       fs.writeFileSync(filePath, template, "utf-8");
     }
   }
-  // Create FIRST_SESSION.md for new businesses
-  const firstSessionPath = path.join(dir, "FIRST_SESSION.md");
+  // Create GET_THE_RIGHT_LEADS.md for new businesses
+  const firstSessionPath = path.join(dir, "GET_THE_RIGHT_LEADS.md");
   if (!fs.existsSync(firstSessionPath)) {
-    fs.writeFileSync(firstSessionPath, FIRST_SESSION_TEMPLATE, "utf-8");
+    fs.writeFileSync(firstSessionPath, GET_THE_RIGHT_LEADS_TEMPLATE, "utf-8");
   }
 }
 
@@ -401,7 +381,7 @@ export function getBootstrapStatus(businessId: string): Record<string, unknown> 
       "SOUL.md": exists("SOUL.md"),
       "MEMORY.md": exists("MEMORY.md"),
       "JOB_HISTORY.md": exists("JOB_HISTORY.md"),
-      "FIRST_SESSION.md": exists("FIRST_SESSION.md"),
+      "GET_THE_RIGHT_LEADS.md": exists("GET_THE_RIGHT_LEADS.md"),
     },
   };
 }
@@ -481,6 +461,59 @@ export function buildStableContext(businessId: string): string {
     }
   }
 
+  // Load city-specific service area guide based on tradie's state/location
+  const cityGuides: Record<string, string> = {
+    nsw: "sydney_regions.md",
+    vic: "melbourne_regions.md",
+    qld: "brisbane_regions.md",
+    wa: "perth_regions.md",
+  };
+
+  // Load trade-specific subcategory guide
+  const tradeGuides: Record<string, string> = {
+    paint: "painter_subcategories.md",
+    // Add more trades as guides are created: plumb, electric, build, etc.
+  };
+
+  const bizContent = readBootstrapFile(businessId, "BUSINESS.md") || "";
+
+  // Service area guide
+  try {
+    const locMatch = bizContent.match(/\*\*Base Suburb:\*\*\s*([^\n]+)/i)
+      || bizContent.match(/\*\*Primary Suburbs:\*\*\s*([^\n]+)/i);
+    const location = locMatch ? locMatch[1].trim().toUpperCase() : "";
+    const stateMatch = location.match(/\b(NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b/);
+    const state = stateMatch ? stateMatch[1].toLowerCase() : "nsw"; // default Sydney
+    const guideFile = cityGuides[state];
+    if (guideFile) {
+      const guidePath = path.resolve(CONFIG.tradeAgentDir, `../resources/${guideFile}`);
+      const guide = fs.readFileSync(guidePath, "utf-8");
+      if (guide) {
+        parts.push(`## Service Area Guide\n${guide}`);
+      }
+    }
+    // Regional tradies (SA, TAS, ACT, NT) — no guide, just radius-based
+  } catch {
+    // Guide not available — agent will use radius-based defaults
+  }
+
+  // Subcategory guide based on trade
+  try {
+    const tradeMatch = bizContent.match(/\*\*Trade:\*\*\s*([^\n]+)/i);
+    const trade = tradeMatch ? tradeMatch[1].toLowerCase() : "";
+    // Find matching guide by checking if trade contains key
+    const guideKey = Object.keys(tradeGuides).find(key => trade.includes(key));
+    if (guideKey) {
+      const guidePath = path.resolve(CONFIG.tradeAgentDir, `../resources/${tradeGuides[guideKey]}`);
+      const guide = fs.readFileSync(guidePath, "utf-8");
+      if (guide) {
+        parts.push(`## Subcategory Guide\n${guide}`);
+      }
+    }
+  } catch {
+    // Guide not available for this trade
+  }
+
   return parts.join("\n\n");
 }
 
@@ -512,6 +545,9 @@ export function getProfileSettings(businessId: string): { maxTokens: number | nu
   }
   return { maxTokens: null };
 }
+
+// Lead setup completion is now simple: GET_THE_RIGHT_LEADS.md exists = onboarding, deleted = done.
+// No field checking needed - clawdbot-style simplicity.
 
 export function buildDynamicContext(businessId: string): string {
   const now = new Date();

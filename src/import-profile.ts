@@ -163,22 +163,40 @@ export async function fetchSSProfileFromUrl(url: string): Promise<ScrapedProfile
 
     // ── Services ──
     const services: string[] = [];
-    const knownServices = [
-      "Exterior house painting", "Interior house painting", "Roof painting",
-      "Commercial painting", "Fence painting", "Paint removal",
-      "Residential painting", "Floor painting", "Concrete painting",
-      "Deck staining", "Cabinet painting", "Spray painting",
-      "Wallpaper removal", "Texture coating", "Strata painting",
-    ];
-    const pageLower = pageText.toLowerCase();
-    for (const svc of knownServices) {
-      if (pageLower.includes(svc.toLowerCase())) services.push(svc);
-    }
-    $("[class*='service'], [class*='category'], [class*='skill']").each((_, el) => {
+    const seen = new Set<string>();
+
+    // Method 1: "SERVICES WE PROVIDE" accordion panel (structured data - most reliable)
+    $("#accordion .panel-body div[class*='col-']").each((_, el) => {
       const text = $(el).text().trim();
-      if (text && text.length < 100 && !services.includes(text)) services.push(text);
+      if (text && text.length > 2 && text.length < 100 && !seen.has(text.toLowerCase())) {
+        seen.add(text.toLowerCase());
+        services.push(text);
+      }
     });
-    if (services.length) profile.services = services.slice(0, 20);
+
+    // Method 2: Also grab the parent category names from panel headings
+    if (!services.length) {
+      $("#accordion .panel-heading .label-category").each((_, el) => {
+        const text = $(el).text().trim();
+        if (text && text.length > 2 && text.length < 100 && !seen.has(text.toLowerCase())) {
+          seen.add(text.toLowerCase());
+          services.push(text);
+        }
+      });
+    }
+
+    // Method 3: Fallback - class-based selectors
+    if (!services.length) {
+      $("[class*='service'], [class*='category'], [class*='skill']").each((_, el) => {
+        const text = $(el).text().trim();
+        if (text && text.length > 2 && text.length < 100 && !seen.has(text.toLowerCase())) {
+          seen.add(text.toLowerCase());
+          services.push(text);
+        }
+      });
+    }
+
+    if (services.length) profile.services = services.slice(0, 30);
 
     // ── Logo ──
     const logoDiv = $("div.businesses-logo-cell");
@@ -270,7 +288,7 @@ export async function fetchSSProfileFromUrl(url: string): Promise<ScrapedProfile
     if (userIcon.length) {
       const parentRow = userIcon.closest("div.row");
       if (parentRow.length) {
-        const nameDiv = parentRow.find("[class*='text-copy']").first();
+        const nameDiv = parentRow.find("div[class*='text-copy']").first();
         if (nameDiv.length) {
           const potential = nameDiv.text().trim();
           if (!/NSW|VIC|QLD|WA|SA|TAS|ACT|NT|Member since|Online/.test(potential)) {
@@ -318,7 +336,7 @@ export async function fetchSSProfileFromUrl(url: string): Promise<ScrapedProfile
       if (coverageIcon.length) {
         const parentRow = coverageIcon.closest("div.row");
         if (parentRow.length) {
-          const locDiv = parentRow.find("[class*='text-copy']").first();
+          const locDiv = parentRow.find("div[class*='text-copy']").first();
           if (locDiv.length) profile.location = locDiv.text().trim();
         }
       }
@@ -334,7 +352,7 @@ export async function fetchSSProfileFromUrl(url: string): Promise<ScrapedProfile
       if (calIcon.length) {
         const parentRow = calIcon.closest("div.row");
         if (parentRow.length) {
-          const dateDiv = parentRow.find("[class*='text-copy']").first();
+          const dateDiv = parentRow.find("div[class*='text-copy']").first();
           if (dateDiv.length) {
             const text = dateDiv.text().trim();
             if (text.includes("Member since")) {
