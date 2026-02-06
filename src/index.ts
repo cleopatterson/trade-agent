@@ -55,8 +55,8 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Serve the trade dashboard from the Python trade_agent/web directory
-const webDir = path.resolve(CONFIG.tradeAgentDir, "web");
+// Serve the trade dashboard - use import.meta.dirname for reliable path resolution
+const webDir = path.resolve(import.meta.dirname, "../web");
 app.use("/static", express.static(webDir));
 
 // ────────── Session Store ──────────
@@ -1125,6 +1125,7 @@ initDataDirs(); // Create data directories on Railway if needed
 
 app.listen(CONFIG.port, () => {
   console.log(`Trade Assistant TS (pi-agent) running on port ${CONFIG.port}`);
+  console.log(`Web directory: ${webDir}`);
   console.log(`Dashboard: http://localhost:${CONFIG.port}/static/trade-dashboard.html`);
   console.log(`All endpoints native (no Python proxy)`);
 });
