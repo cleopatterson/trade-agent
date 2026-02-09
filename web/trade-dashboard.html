@@ -2086,7 +2086,7 @@
         const data = JSON.parse(e.data);
         console.log('[SSE] Job reviewed:', data);
         addDebugLog(`Job reviewed: score=${data.review?.score} rec=${data.review?.recommendation}`, 'success');
-        queueNotification(data);
+        injectLeadIntoChat(data);
         loadJobs(); // Refresh jobs list
       });
 
@@ -3547,6 +3547,57 @@ Actively develop strategy based on:
 
       container.appendChild(div);
       container.scrollTop = container.scrollHeight;
+    }
+
+    function injectLeadIntoChat(data) {
+      const job = data.job || {};
+      const review = data.review || {};
+      const score = review.score || '?';
+      const rec = review.recommendation || 'review';
+      const jobId = data.job_id || job.job_id || '';
+      const name = job.name || 'New Job';
+      const suburb = job.suburb || '';
+      const distance = job.distance_km != null ? `${job.distance_km}km` : '';
+      const budget = job.budget_display || '';
+      const customer = job.customer?.name || job.customer?.first_name || '';
+      const reasoning = review.reasoning || '';
+      const draft = review.draft_message || '';
+      const greenFlags = (review.green_flags || []).map(f => `+${f}`).join('  ');
+      const redFlags = (review.red_flags || []).map(f => `-${f}`).join('  ');
+
+      const lines = [
+        `**New Lead** — ${name}`,
+        '',
+        `**${customer}** in ${suburb}${distance ? ` (${distance})` : ''}${budget ? ` · ${budget}` : ''}`,
+        `Score: **${score}/10** — ${reasoning}`,
+      ];
+      if (greenFlags || redFlags) {
+        lines.push(`${greenFlags}${greenFlags && redFlags ? '  ' : ''}${redFlags}`);
+      }
+      if (draft) {
+        lines.push('', `Draft message: "${draft}"`);
+      }
+      const firstName = customer.split(' ')[0] || 'Customer';
+      lines.push('', `[[Send intro to ${firstName} for job ${jobId}]] [[Skip job ${jobId}]] [[Review job ${jobId}]]`);
+
+      const text = lines.join('\n');
+
+      // Switch to chat tab and inject
+      switchPage('chat');
+      addMessage(text, 'assistant');
+
+      // Play a subtle sound
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.value = 0.1;
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } catch {}
     }
 
     function addTypingIndicator() {
