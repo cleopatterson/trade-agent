@@ -1,9 +1,8 @@
 // Service Worker for Baz Trade Assistant PWA
 // Strategy: Network-first for everything — always get latest from server.
-// The SW exists primarily to satisfy iOS PWA install requirements
-// and provide a basic offline fallback.
+// Handles: caching, push notifications, notification tap.
 
-const CACHE_NAME = 'baz-v1';
+const CACHE_NAME = 'baz-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -37,5 +36,38 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => caches.match(request))
+  );
+});
+
+// ────────── Push Notifications ──────────
+
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'New Lead', {
+      body: data.body || 'You have a new job lead',
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      data: data.data || {},
+      tag: data.data?.job_id || 'lead',  // collapse duplicate notifications for same job
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = '/static/trade-dashboard.html';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // If dashboard is already open, focus it
+      for (const client of windowClients) {
+        if (client.url.includes('trade-dashboard') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      return self.clients.openWindow(url);
+    })
   );
 });

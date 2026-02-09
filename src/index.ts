@@ -8,6 +8,7 @@ import http from "http";
 import https from "https";
 import fs from "fs";
 import multer from "multer";
+import webpush from "web-push";
 import { CONFIG, initDataDirs } from "./config.js";
 import { createAgentSession, chat, chatStream, TRADE_ASSISTANT_PROMPT_STATIC, type AgentSession } from "./agent.js";
 import {
@@ -109,6 +110,81 @@ function broadcastToBusinessSSE(businessId: string, event: string, data: unknown
   }
 }
 
+// ────────── Web Push ──────────
+
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
+const VAPID_EMAIL = process.env.VAPID_EMAIL || "mailto:push@example.com";
+
+interface PushSubscriptionRecord {
+  businessId: string;
+  subscription: webpush.PushSubscription;
+  createdAt: string;
+}
+
+const pushSubscriptionsFile = path.join(CONFIG.memoryDir, "push_subscriptions.json");
+
+function loadPushSubscriptions(): PushSubscriptionRecord[] {
+  try {
+    return JSON.parse(fs.readFileSync(pushSubscriptionsFile, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+function savePushSubscriptions(subs: PushSubscriptionRecord[]): void {
+  fs.mkdirSync(path.dirname(pushSubscriptionsFile), { recursive: true });
+  fs.writeFileSync(pushSubscriptionsFile, JSON.stringify(subs, null, 2));
+}
+
+let pushReady = false;
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    VAPID_EMAIL.startsWith("mailto:") ? VAPID_EMAIL : `mailto:${VAPID_EMAIL}`,
+    VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+  );
+  pushReady = true;
+  console.log("[Push] VAPID configured — web push enabled");
+} else {
+  console.log("[Push] No VAPID keys — web push disabled (set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY)");
+}
+
+async function sendPushToBusinessDevices(
+  businessId: string,
+  payload: { title: string; body: string; data?: Record<string, unknown> }
+): Promise<void> {
+  if (!pushReady) return;
+
+  const allSubs = loadPushSubscriptions();
+  const businessSubs = allSubs.filter((s) => s.businessId === businessId);
+  if (!businessSubs.length) return;
+
+  const stale: string[] = [];
+
+  await Promise.allSettled(
+    businessSubs.map(async (record) => {
+      try {
+        await webpush.sendNotification(record.subscription, JSON.stringify(payload));
+      } catch (err: any) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          // Subscription expired or invalid — mark for removal
+          stale.push(record.subscription.endpoint);
+          console.log(`  [Push] Removed stale subscription for ${businessId}`);
+        } else {
+          console.error(`  [Push] Failed to send to ${businessId}: ${err.message}`);
+        }
+      }
+    })
+  );
+
+  // Clean up stale subscriptions
+  if (stale.length) {
+    const cleaned = allSubs.filter((s) => !stale.includes(s.subscription.endpoint));
+    savePushSubscriptions(cleaned);
+  }
+}
+
 // ────────── Core Endpoints ──────────
 
 app.get("/", (_req, res) => {
@@ -152,6 +228,50 @@ app.post("/config/max-tokens", (req, res) => {
 
 app.get("/config", (_req, res) => {
   res.json({ brevityMode: CONFIG.brevityMode, maxTokens: CONFIG.maxTokens });
+});
+
+// ────────── Push Notification Endpoints ──────────
+
+app.get("/push/vapid-key", (_req, res) => {
+  if (!pushReady) {
+    return res.status(503).json({ error: "Push not configured — VAPID keys missing" });
+  }
+  res.json({ key: VAPID_PUBLIC_KEY });
+});
+
+app.post("/push/subscribe", (req, res) => {
+  const { business_id, subscription } = req.body;
+  if (!business_id || !subscription?.endpoint) {
+    return res.status(400).json({ error: "business_id and subscription are required" });
+  }
+
+  const allSubs = loadPushSubscriptions();
+
+  // Dedupe by endpoint — same device re-subscribing
+  const filtered = allSubs.filter((s) => s.subscription.endpoint !== subscription.endpoint);
+  filtered.push({
+    businessId: business_id,
+    subscription,
+    createdAt: new Date().toISOString(),
+  });
+  savePushSubscriptions(filtered);
+
+  console.log(`  [Push] Subscribed device for ${business_id} (${filtered.filter((s) => s.businessId === business_id).length} total)`);
+  res.json({ success: true, message: "Push subscription registered" });
+});
+
+app.post("/push/unsubscribe", (req, res) => {
+  const { endpoint } = req.body;
+  if (!endpoint) {
+    return res.status(400).json({ error: "endpoint is required" });
+  }
+
+  const allSubs = loadPushSubscriptions();
+  const filtered = allSubs.filter((s) => s.subscription.endpoint !== endpoint);
+  savePushSubscriptions(filtered);
+
+  console.log(`  [Push] Unsubscribed device (${allSubs.length - filtered.length} removed)`);
+  res.json({ success: true, message: "Push subscription removed" });
 });
 
 // ────────── Whisper Transcription ──────────
@@ -1008,6 +1128,13 @@ app.post("/jobs/:businessId/incoming", (req, res) => {
     name: job.name,
     suburb: job.suburb,
     customer_name: job.customer?.name,
+  });
+
+  // Push notification to registered devices
+  sendPushToBusinessDevices(businessId, {
+    title: "New Lead",
+    body: `${job.name || "New job"} — ${job.suburb || ""}`,
+    data: { job_id: job.job_id, business_id: businessId },
   });
 
   // Return HTTP response immediately

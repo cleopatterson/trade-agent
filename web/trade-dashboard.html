@@ -1512,6 +1512,9 @@
         </select>
       </div>
       <div class="topbar-right">
+        <button class="btn btn-icon topbar-action" onclick="togglePushNotifications()" title="Push notifications" id="pushBtn" style="display:none;">
+          <i class="fas fa-bell-slash" id="pushIcon"></i>
+        </button>
         <button class="btn btn-icon topbar-action voice-btn" onclick="toggleVoice()" title="Toggle voice" id="voiceBtn">
           <i class="fas fa-volume-mute" id="voiceIcon"></i>
         </button>
@@ -2920,6 +2923,15 @@ Actively develop strategy based on:
 
       // Connect SSE for real-time notifications
       connectSSE(businessId);
+
+      // Re-register push subscription for this business (if already subscribed)
+      if (pushSubscription && currentBusinessId) {
+        fetch(`${API_URL}/push/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ business_id: currentBusinessId, subscription: pushSubscription }),
+        }).catch(() => {});
+      }
 
       try {
         if (startSession) {
@@ -4414,11 +4426,103 @@ Actively develop strategy based on:
       }
     }
 
-    // Register Service Worker for PWA
+    // ────────── Push Notifications ──────────
+
+    let pushSubscription = null;
+
+    // Register Service Worker for PWA + push
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js')
-        .then(() => console.log('Service Worker registered'))
+        .then(async (reg) => {
+          console.log('Service Worker registered');
+          // Check existing push subscription
+          pushSubscription = await reg.pushManager.getSubscription();
+          updatePushButton();
+        })
         .catch(err => console.log('Service Worker registration failed:', err));
+    }
+
+    function updatePushButton() {
+      const btn = document.getElementById('pushBtn');
+      const icon = document.getElementById('pushIcon');
+      if (!('PushManager' in window)) {
+        btn.style.display = 'none';
+        return;
+      }
+      btn.style.display = '';
+      if (pushSubscription) {
+        icon.className = 'fas fa-bell';
+        btn.title = 'Push notifications ON — tap to disable';
+        btn.style.color = '#22c55e';
+      } else {
+        icon.className = 'fas fa-bell-slash';
+        btn.title = 'Enable push notifications';
+        btn.style.color = '';
+      }
+    }
+
+    async function togglePushNotifications() {
+      if (pushSubscription) {
+        // Unsubscribe
+        try {
+          const endpoint = pushSubscription.endpoint;
+          await pushSubscription.unsubscribe();
+          pushSubscription = null;
+          await fetch(`${API_URL}/push/unsubscribe`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ endpoint }),
+          });
+          console.log('[Push] Unsubscribed');
+        } catch (err) {
+          console.error('[Push] Unsubscribe failed:', err);
+        }
+      } else {
+        // Subscribe
+        await subscribeToPush();
+      }
+      updatePushButton();
+    }
+
+    async function subscribeToPush() {
+      if (!currentBusinessId) {
+        alert('Select a business first');
+        return;
+      }
+
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('[Push] Permission denied');
+          return;
+        }
+
+        const reg = await navigator.serviceWorker.ready;
+        const resp = await fetch(`${API_URL}/push/vapid-key`);
+        if (!resp.ok) {
+          console.error('[Push] Server has no VAPID key configured');
+          return;
+        }
+        const { key } = await resp.json();
+
+        pushSubscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: key,
+        });
+
+        await fetch(`${API_URL}/push/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            business_id: currentBusinessId,
+            subscription: pushSubscription,
+          }),
+        });
+
+        console.log('[Push] Subscribed for', currentBusinessId);
+      } catch (err) {
+        console.error('[Push] Subscribe failed:', err);
+      }
     }
   </script>
 </body>
