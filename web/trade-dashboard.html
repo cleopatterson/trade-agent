@@ -2843,6 +2843,15 @@ Actively develop strategy based on:
 
     // ===== BUSINESS MANAGEMENT =====
     async function loadState() {
+      // Parse URL params (from push notification tap)
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramBiz = urlParams.get('biz');
+      const paramJob = urlParams.get('job');
+      if (paramBiz || paramJob) {
+        // Clean URL so params don't re-trigger on refresh
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+
       const saved = localStorage.getItem('tradeAssistantState');
       if (saved) {
         const state = JSON.parse(saved);
@@ -2850,6 +2859,8 @@ Actively develop strategy based on:
         currentBusinessId = state.currentBusinessId;
         memory = state.memory || [];
       }
+      // URL param overrides saved business
+      if (paramBiz) currentBusinessId = paramBiz;
 
       // Fetch businesses from server and merge with local state
       try {
@@ -2878,7 +2889,19 @@ Actively develop strategy based on:
 
       if (currentBusinessId) {
         document.getElementById('userDropdown').value = currentBusinessId;
-        selectBusiness(currentBusinessId, true);  // Always start a session on load
+        await selectBusiness(currentBusinessId, true);
+
+        // If opened from a push notification with a specific job, inject it into chat
+        if (paramJob && allJobs) {
+          const targetJob = allJobs.find(j => j.job_id === paramJob);
+          if (targetJob && targetJob.agent_review) {
+            injectLeadIntoChat({
+              job_id: paramJob,
+              job: targetJob,
+              review: targetJob.agent_review,
+            });
+          }
+        }
       }
     }
 

@@ -2,7 +2,7 @@
 // Strategy: Network-first for everything — always get latest from server.
 // Handles: caching, push notifications, notification tap.
 
-const CACHE_NAME = 'baz-v2';
+const CACHE_NAME = 'baz-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -56,13 +56,18 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = '/static/trade-dashboard.html';
+  const notifData = event.notification.data || {};
+  const bizId = notifData.business_id || '';
+  const jobId = notifData.job_id || '';
+  const params = bizId ? `?biz=${bizId}${jobId ? `&job=${jobId}` : ''}` : '';
+  const url = `/static/trade-dashboard.html${params}`;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // If dashboard is already open, focus it
+      // If dashboard is already open, navigate it to the right context and focus
       for (const client of windowClients) {
         if (client.url.includes('trade-dashboard') && 'focus' in client) {
+          if (params) client.navigate(url);
           return client.focus();
         }
       }

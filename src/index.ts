@@ -1148,7 +1148,7 @@ app.post("/jobs/:businessId/incoming", (req, res) => {
       const pushBody = review.notification_summary
         || `${job.name || "New job"} in ${job.suburb || "your area"}`;
       sendPushToBusinessDevices(businessId, {
-        title: "New lead from Baz",
+        title: "New Lead",
         body: pushBody,
         data: { job_id: job.job_id, business_id: businessId },
       });
@@ -1166,7 +1166,7 @@ app.post("/jobs/:businessId/incoming", (req, res) => {
 
       // Still send a basic push even if review fails
       sendPushToBusinessDevices(businessId, {
-        title: "New lead from Baz",
+        title: "New Lead",
         body: `${job.name || "New job"} in ${job.suburb || "your area"}`,
         data: { job_id: job.job_id, business_id: businessId },
       });
