@@ -2889,7 +2889,7 @@ Actively develop strategy based on:
 
       if (currentBusinessId) {
         document.getElementById('userDropdown').value = currentBusinessId;
-        await selectBusiness(currentBusinessId, true);
+        await selectBusiness(currentBusinessId, true, !!paramJob);
 
         // If opened from a push notification with a specific job, inject it into chat
         if (paramJob && allJobs) {
@@ -2932,7 +2932,7 @@ Actively develop strategy based on:
       }
     }
 
-    async function selectBusiness(businessId, startSession = true) {
+    async function selectBusiness(businessId, startSession = true, skipWelcome = false) {
       // Show loading overlay
       const overlay = document.getElementById('loadingOverlay');
       const loadingText = document.getElementById('loadingText');
@@ -2959,7 +2959,7 @@ Actively develop strategy based on:
       try {
         if (startSession) {
           loadingText.textContent = 'Starting session...';
-          await startNewSession();
+          await startNewSession(skipWelcome);
         }
 
         // Load profile data
@@ -3211,7 +3211,7 @@ Actively develop strategy based on:
     }
 
     // ===== SESSION MANAGEMENT =====
-    async function startNewSession() {
+    async function startNewSession(skipWelcome = false) {
       try {
         addDebugLog('Starting new session...');
         const response = await fetch(`${API_URL}/assistant/start`, {
@@ -3224,12 +3224,15 @@ Actively develop strategy based on:
         sessionId = data.session_id;
         addDebugLog(`Session started: ${sessionId}`, 'success');
 
-        // Clear chat and stream the welcome message
+        // Clear chat
         document.getElementById('chatMessages').innerHTML = '';
 
-        // Dismiss loading overlay so user sees chat with streaming welcome
+        // Dismiss loading overlay so user sees chat
         const overlay = document.getElementById('loadingOverlay');
         overlay.classList.remove('active');
+
+        // Skip welcome message when opening from a push notification
+        if (skipWelcome) return;
 
         // Show typing indicator while waiting for welcome message
         const welcomeTypingId = addTypingIndicator();
@@ -3598,7 +3601,7 @@ Actively develop strategy based on:
         lines.push(`${greenFlags}${greenFlags && redFlags ? '  ' : ''}${redFlags}`);
       }
       if (draft) {
-        lines.push('', `Draft message: "${draft}"`);
+        lines.push('', '---', '', `**Draft intro:** "${draft}"`);
       }
       const firstName = customer.split(' ')[0] || 'Customer';
       lines.push('', `[[Send Message|Send intro to ${firstName} for job ${jobId}]] [[Skip|Skip job ${jobId}]] [[Tell Me More|Tell me more about job ${jobId}]]`);
@@ -3707,6 +3710,9 @@ Actively develop strategy based on:
       // Headers
       html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
       html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+
+      // Horizontal rules
+      html = html.replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #333;margin:8px 0;">');
 
       // Bold
       html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
