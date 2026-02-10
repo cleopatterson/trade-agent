@@ -22,17 +22,18 @@
     :root {
       --bg-dark: #0a0a0a;
       --bg-sidebar: #0a0a0a;
-      --bg-main: #ffffff;
+      --bg-main: #111113;
+      --bg-surface: #1a1a1f;
       --bg-hover: #1a1a1a;
       --bg-active: rgba(0,206,209,0.15);
       --text-primary: #ffffff;
       --text-secondary: #888;
-      --text-main: #333;
-      --accent: #0066CC;
+      --text-main: #e0e0e0;
+      --accent: #3b8bf2;
       --accent-yellow: #FFD700;
-      --accent-green: #0066CC;
+      --accent-green: #22c55e;
       --border: #222;
-      --border-light: #e0e0e0;
+      --border-light: #2a2a30;
     }
 
     * {
@@ -184,7 +185,7 @@
     /* Top Bar */
     .topbar {
       height: 56px;
-      background: white;
+      background: var(--bg-surface);
       border-bottom: 1px solid var(--border-light);
       display: flex;
       align-items: center;
@@ -258,7 +259,8 @@
       border: 1px solid var(--border-light);
       border-radius: 6px;
       font-size: 14px;
-      background: white;
+      background: #1e1e24;
+      color: var(--text-main);
       cursor: pointer;
       min-width: 180px;
     }
@@ -288,13 +290,13 @@
     }
 
     .btn-secondary {
-      background: #f5f5f5;
-      color: #333;
+      background: #252530;
+      color: var(--text-main);
       border: 1px solid var(--border-light);
     }
 
     .btn-secondary:hover {
-      background: #e8e8e8;
+      background: #303040;
     }
 
     /* Content Area */
@@ -303,8 +305,7 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      padding: 24px;
-      background: #f9f9f9;
+      background: var(--bg-main);
       position: relative;
     }
 
@@ -320,18 +321,18 @@
       flex: 1;
       min-height: 0;
       overflow-y: auto;
+      padding: 24px;
     }
 
-    /* Chat page: input stays pinned, only messages scroll */
+    /* Chat page: no padding, input stays pinned, only messages scroll */
     #page-chat.active {
       overflow: hidden;
-      margin-bottom: -24px; /* cancel .content bottom padding so input sits flush */
+      padding: 0;
     }
 
     .chat-page {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -398,7 +399,8 @@
     }
 
     .message-content {
-      background: #f5f5f5;
+      background: #252530;
+      color: #e0e0e0;
       padding: 14px 18px;
       border-radius: 12px;
       border-top-left-radius: 4px;
@@ -413,7 +415,7 @@
     }
 
     .message.user .message-content {
-      background: #0066cc;
+      background: var(--accent);
       color: white;
       border-radius: 12px;
       border-top-right-radius: 4px;
@@ -521,6 +523,7 @@
     .chat-input-area {
       padding: 16px 24px;
       border-top: 1px solid var(--border-light);
+      background: var(--bg-surface);
       display: flex;
       gap: 12px;
       align-items: flex-start;
@@ -542,10 +545,16 @@
       max-height: 150px;
       outline: none;
       font-family: inherit;
+      background: #1e1e24;
+      color: var(--text-main);
     }
 
     .chat-input:focus {
       border-color: var(--accent);
+    }
+
+    .chat-input::placeholder {
+      color: #666;
     }
 
     .chat-input-hint {
@@ -575,11 +584,10 @@
 
     /* ===== PAGE: PROFILE ===== */
     .profile-page .section {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .section-header {
@@ -657,7 +665,7 @@
 
     /* ===== PAGE: MEMORY ===== */
     .memory-item {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 8px;
       padding: 16px;
       margin-bottom: 12px;
@@ -695,11 +703,10 @@
 
     /* ===== PAGE: CONFIG ===== */
     .config-section {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .config-section textarea {
@@ -712,6 +719,8 @@
       font-size: 13px;
       line-height: 1.5;
       resize: vertical;
+      background: #1e1e24;
+      color: var(--text-main);
     }
 
     .config-row {
@@ -734,6 +743,8 @@
       border: 1px solid var(--border-light);
       border-radius: 6px;
       font-size: 13px;
+      background: #1e1e24;
+      color: var(--text-main);
     }
 
     /* ===== PAGE: DEBUG ===== */
@@ -767,7 +778,7 @@
 
     /* ===== PAGE: JOBS ===== */
     .job-card {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 8px;
       padding: 20px;
       margin-bottom: 12px;
@@ -836,7 +847,7 @@
 
     .action-btn {
       padding: 8px 16px;
-      background: white;
+      background: transparent;
       border: 1px solid var(--accent);
       color: var(--accent);
       border-radius: 20px;
@@ -897,7 +908,7 @@
     }
 
     .modal {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 12px;
       width: 100%;
       max-width: 450px;
@@ -978,7 +989,7 @@
       align-items: center;
       gap: 16px;
       padding: 40px;
-      background: white;
+      background: var(--bg-surface);
       border-radius: 12px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.1);
     }
@@ -1083,21 +1094,18 @@
         flex: 1;
       }
 
-      .content {
+      /* On mobile, tighter padding for non-chat pages */
+      .page.active {
         padding: 12px;
-        padding-bottom: env(safe-area-inset-bottom);
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
       }
 
-      /* On mobile, chat page fills edge-to-edge */
       #page-chat.active {
-        margin: -12px;
-        margin-top: 0;
-        margin-bottom: calc(-12px - env(safe-area-inset-bottom));
+        padding: 0;
       }
 
       #page-chat .chat-page {
         border-radius: 0;
-        box-shadow: none;
       }
 
       .chat-input-area {
@@ -1196,7 +1204,7 @@
     }
 
     .notification-card {
-      background: white;
+      background: var(--bg-surface);
       border-radius: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
       overflow: hidden;
@@ -1537,9 +1545,7 @@
         </select>
       </div>
       <div class="topbar-right">
-        <button class="btn btn-icon topbar-action" onclick="togglePushNotifications()" title="Push notifications" id="pushBtn" style="display:none;">
-          <i class="fas fa-bell-slash" id="pushIcon"></i>
-        </button>
+        <!-- Push bell moved to Config page -->
         <button class="btn btn-icon topbar-action voice-btn" onclick="toggleVoice()" title="Toggle voice" id="voiceBtn">
           <i class="fas fa-volume-mute" id="voiceIcon"></i>
         </button>
@@ -1971,6 +1977,17 @@
               <i class="fas fa-expand-alt" id="brevityIcon"></i> <span id="brevityLabel">OFF</span>
             </button>
             <span style="font-size: 11px; color: #999; margin-left: 8px;">Short, concise responses (good for voice demos)</span>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <h2 class="section-title">Notifications</h2>
+          <div class="config-row">
+            <label>Push Notifications</label>
+            <button class="btn" id="pushBtn" onclick="togglePushNotifications()" style="min-width: 120px;">
+              <i class="fas fa-bell-slash" id="pushIcon"></i> <span id="pushLabel">OFF</span>
+            </button>
+            <span style="font-size: 11px; color: #999; margin-left: 8px;">Get notified when new leads arrive</span>
           </div>
         </div>
       </div>
@@ -4557,6 +4574,8 @@ Actively develop strategy based on:
     function updatePushButton() {
       const btn = document.getElementById('pushBtn');
       const icon = document.getElementById('pushIcon');
+      const label = document.getElementById('pushLabel');
+      if (!btn) return;
       if (!('PushManager' in window)) {
         btn.style.display = 'none';
         return;
@@ -4564,11 +4583,11 @@ Actively develop strategy based on:
       btn.style.display = '';
       if (pushSubscription) {
         icon.className = 'fas fa-bell';
-        btn.title = 'Push notifications ON — tap to disable';
+        if (label) label.textContent = 'ON';
         btn.style.color = '#22c55e';
       } else {
         icon.className = 'fas fa-bell-slash';
-        btn.title = 'Enable push notifications';
+        if (label) label.textContent = 'OFF';
         btn.style.color = '';
       }
     }
