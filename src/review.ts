@@ -10,18 +10,20 @@ export interface JobReview {
   recommendation: "send" | "skip";
   reasoning: string;
   draft_message: string;
+  notification_summary: string;
   green_flags: string[];
   red_flags: string[];
   suggested_price_range: { min: number; max: number } | null;
 }
 
 const REVIEW_SYSTEM_PROMPT = `You are a trade assistant reviewing a job lead for a tradie. You will be given:
-1. Business context (who the tradie is, what they do, their preferences)
+1. Business context (who the tradie is, what they do, their preferences, their rates)
 2. Job details including a pre-calculated lead_score (0-100) based on lead strength
 
 The lead_score is already calculated. Your job is to:
 - Analyze the fit for THIS specific tradie
-- Write a personalized intro message
+- Write a personalized intro message that includes a natural price indication
+- Write a short notification summary for the phone lock screen
 - Identify green/red flags
 - Suggest a price range if possible
 
@@ -29,7 +31,8 @@ Respond with ONLY valid JSON matching this schema:
 {
   "recommendation": "send" | "skip",
   "reasoning": "<1-2 sentence explanation of why this is/isn't a good fit for this tradie>",
-  "draft_message": "<2-3 sentence intro message to the customer, written in first person as the tradie>",
+  "draft_message": "<2-3 sentence intro message to the customer, in first person as the tradie. Must naturally include a price indication — their hourly rate, day rate, or a ballpark estimate for the job, whichever fits best. Use the tradie's actual rates from the business context if available.>",
+  "notification_summary": "<Single sentence for phone notification, e.g. 'Painting a 3-bed interior in Mosman, needs it done ASAP'>",
   "green_flags": ["<positive signals>"],
   "red_flags": ["<concerns>"],
   "suggested_price_range": { "min": <number>, "max": <number> } or null
@@ -39,7 +42,9 @@ Recommendation guide:
 - "send" if lead_score >= 60 AND fits the tradie's trade/area/preferences
 - "skip" if lead_score < 50 OR significant red flags OR poor fit
 
-The draft_message should be warm, professional, and mention something specific about the job. Keep it concise — tradies don't write essays.
+The draft_message should be warm, professional, and mention something specific about the job. Include a price indication naturally — for smaller jobs mention hourly/day rate, for larger jobs give a ballpark range. Keep it concise — tradies don't write essays.
+
+The notification_summary is what appears on the phone lock screen. Keep it to one short sentence that captures: what the job is, where, and urgency. No greeting, no fluff.
 
 For price range, estimate based on the job description and size. If insufficient info, use null.`;
 
@@ -124,6 +129,7 @@ export async function reviewJobInBackground(
     recommendation: parsed.recommendation,
     reasoning: parsed.reasoning || "",
     draft_message: parsed.draft_message || "",
+    notification_summary: parsed.notification_summary || "",
     green_flags: parsed.green_flags || [],
     red_flags: parsed.red_flags || [],
     suggested_price_range: parsed.suggested_price_range || null,

@@ -3578,7 +3578,7 @@ Actively develop strategy based on:
         lines.push('', `Draft message: "${draft}"`);
       }
       const firstName = customer.split(' ')[0] || 'Customer';
-      lines.push('', `[[Send intro to ${firstName} for job ${jobId}]] [[Skip job ${jobId}]] [[Review job ${jobId}]]`);
+      lines.push('', `[[Send Message|Send intro to ${firstName} for job ${jobId}]] [[Skip|Skip job ${jobId}]] [[Tell Me More|Tell me more about job ${jobId}]]`);
 
       const text = lines.join('\n');
 
@@ -3727,8 +3727,11 @@ Actively develop strategy based on:
       if (buttons.length > 0) {
         html += '<div class="action-buttons">';
         buttons.forEach((btn, idx) => {
-          // Use data attribute to avoid escaping issues
-          html += `<button class="action-btn" data-action="${btn.replace(/"/g, '&quot;')}">${escapeHtml(btn)}</button>`;
+          // Support [[label|action]] format — display label, send action
+          const pipeIdx = btn.indexOf('|');
+          const label = pipeIdx >= 0 ? btn.slice(0, pipeIdx).trim() : btn;
+          const action = pipeIdx >= 0 ? btn.slice(pipeIdx + 1).trim() : btn;
+          html += `<button class="action-btn" data-action="${action.replace(/"/g, '&quot;')}">${escapeHtml(label)}</button>`;
         });
         html += '</div>';
       }

@@ -1130,13 +1130,6 @@ app.post("/jobs/:businessId/incoming", (req, res) => {
     customer_name: job.customer?.name,
   });
 
-  // Push notification to registered devices
-  sendPushToBusinessDevices(businessId, {
-    title: "New Lead",
-    body: `${job.name || "New job"} — ${job.suburb || ""}`,
-    data: { job_id: job.job_id, business_id: businessId },
-  });
-
   // Return HTTP response immediately
   res.json({
     success: true,
@@ -1145,11 +1138,20 @@ app.post("/jobs/:businessId/incoming", (req, res) => {
     message: "Job received, reviewing in background",
   });
 
-  // Fire-and-forget: background review
+  // Fire-and-forget: background review, then push notification
   reviewJobInBackground(businessId, job)
     .then((review) => {
       // Save agent_review on the job
       updateJobInFile(businessId, job.job_id, { agent_review: review });
+
+      // Push notification AFTER review — uses AI-generated summary
+      const pushBody = review.notification_summary
+        || `${job.name || "New job"} in ${job.suburb || "your area"}`;
+      sendPushToBusinessDevices(businessId, {
+        title: "New lead from Baz",
+        body: pushBody,
+        data: { job_id: job.job_id, business_id: businessId },
+      });
 
       // Broadcast review complete
       broadcastToBusinessSSE(businessId, "job_reviewed", {
@@ -1161,6 +1163,14 @@ app.post("/jobs/:businessId/incoming", (req, res) => {
     })
     .catch((err) => {
       console.error(`  [Review] Failed for job ${job.job_id}: ${err.message}`);
+
+      // Still send a basic push even if review fails
+      sendPushToBusinessDevices(businessId, {
+        title: "New lead from Baz",
+        body: `${job.name || "New job"} in ${job.suburb || "your area"}`,
+        data: { job_id: job.job_id, business_id: businessId },
+      });
+
       broadcastToBusinessSSE(businessId, "review_failed", {
         job_id: job.job_id,
         error: err.message,
