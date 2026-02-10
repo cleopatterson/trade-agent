@@ -300,7 +300,9 @@
     /* Content Area */
     .content {
       flex: 1;
-      overflow-y: auto;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
       padding: 24px;
       background: #f9f9f9;
       position: relative;
@@ -309,12 +311,20 @@
     /* ===== PAGE: CHAT ===== */
     .page {
       display: none;
-      height: 100%;
+      min-height: 0;
     }
 
     .page.active {
       display: flex;
       flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    /* Chat page: input stays pinned, only messages scroll */
+    #page-chat.active {
+      overflow: hidden;
     }
 
     .chat-page {
@@ -324,6 +334,8 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
     }
 
     .chat-messages {
@@ -1073,6 +1085,12 @@
       .content {
         padding: 12px;
         padding-bottom: env(safe-area-inset-bottom);
+      }
+
+      /* On mobile, chat page fills edge-to-edge */
+      #page-chat .chat-page {
+        border-radius: 0;
+        box-shadow: none;
       }
 
       .chat-input-area {
