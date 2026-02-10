@@ -153,7 +153,7 @@ export function createTools(businessId: string): AgentTool<any>[] {
     {
       name: "send_message",
       label: "Send Message",
-      description: "Send a message to a customer about a job.",
+      description: "Send a message to a customer about a job. Before sending an intro, encourage the tradie to include a price indication (hourly rate, day rate, or ballpark). If their rates are in BUSINESS.md, suggest using those. If not, ask what they'd charge and help them work it into the message. Never invent rates — always confirm with the tradie first.",
       parameters: Type.Object({
         job_id: Type.String({ description: "The job to respond to" }),
         message: Type.String({ description: "Your message" }),

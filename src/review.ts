@@ -31,7 +31,7 @@ Respond with ONLY valid JSON matching this schema:
 {
   "recommendation": "send" | "skip",
   "reasoning": "<1-2 sentence explanation of why this is/isn't a good fit for this tradie>",
-  "draft_message": "<2-3 sentence intro message to the customer, in first person as the tradie. Must naturally include a price indication — their hourly rate, day rate, or a ballpark estimate for the job, whichever fits best. Use the tradie's actual rates from the business context if available.>",
+  "draft_message": "<2-3 sentence intro message to the customer, in first person as the tradie. If the tradie's rates are in the business context, include them naturally. If no rates are available, leave a placeholder like '[your rate]' so the tradie can fill it in before sending.>",
   "notification_summary": "<Single sentence for phone notification, e.g. 'Painting a 3-bed interior in Mosman, needs it done ASAP'>",
   "green_flags": ["<positive signals>"],
   "red_flags": ["<concerns>"],
@@ -42,7 +42,7 @@ Recommendation guide:
 - "send" if lead_score >= 60 AND fits the tradie's trade/area/preferences
 - "skip" if lead_score < 50 OR significant red flags OR poor fit
 
-The draft_message should be warm, professional, and mention something specific about the job. Include a price indication naturally — for smaller jobs mention hourly/day rate, for larger jobs give a ballpark range. Keep it concise — tradies don't write essays.
+The draft_message should be warm, professional, and mention something specific about the job. If the tradie's rates are in the business context, weave them in naturally. If no rates are available, include a placeholder like '[your rate/hr]' so the tradie fills it in. Keep it concise — tradies don't write essays.
 
 The notification_summary is what appears on the phone lock screen. Keep it to one short sentence that captures: what the job is, where, and urgency. No greeting, no fluff.
 
