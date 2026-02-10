@@ -186,7 +186,6 @@
     .topbar {
       height: 56px;
       background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-light);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -219,30 +218,20 @@
       width: 36px;
       height: 36px;
       border-radius: 50%;
-      background: var(--accent);
-      color: white;
-      border: none;
+      background: transparent;
+      color: #ccc;
+      border: 1px solid #333;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .voice-btn {
-      background: #e8e8e8;
-      color: #666;
-      border: none;
-      margin-right: 8px;
-      font-size: 15px;
+    /* Voice button (in Config page) */
+    #voiceBtn.active {
+      color: var(--accent-green);
     }
-    .voice-btn:hover {
-      background: #ddd;
-    }
-    .voice-btn.active {
-      background: var(--accent);
-      color: white;
-    }
-    .voice-btn.speaking {
+    #voiceBtn.speaking {
       animation: pulse-voice 1s ease-in-out infinite;
     }
     @keyframes pulse-voice {
@@ -251,18 +240,80 @@
     }
 
     .topbar-action:hover {
-      background: #00b8b8;
+      background: #252530;
     }
 
+    /* Hidden native select — used for data only */
     .user-dropdown {
-      padding: 8px 12px;
-      border: 1px solid var(--border-light);
-      border-radius: 6px;
+      display: none;
+    }
+
+    /* Custom business selector */
+    .biz-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: background 0.15s;
+      position: relative;
+    }
+    .biz-selector:hover {
+      background: #252530;
+    }
+    .biz-selector .biz-icon {
+      color: #666;
       font-size: 14px;
+    }
+    .biz-selector .biz-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+      white-space: nowrap;
+    }
+    .biz-selector .biz-chevron {
+      color: #555;
+      font-size: 11px;
+      margin-left: 2px;
+    }
+
+    /* Dropdown menu */
+    .biz-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 4px;
       background: #1e1e24;
+      border: 1px solid #333;
+      border-radius: 8px;
+      min-width: 220px;
+      z-index: 500;
+      padding: 4px 0;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .biz-dropdown.open {
+      display: block;
+    }
+    .biz-dropdown-item {
+      padding: 10px 14px;
+      font-size: 14px;
       color: var(--text-main);
       cursor: pointer;
-      min-width: 180px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .biz-dropdown-item:hover {
+      background: #252530;
+    }
+    .biz-dropdown-item.active {
+      color: var(--accent);
+    }
+    .biz-dropdown-item .fa-plus {
+      color: var(--accent);
     }
 
     .btn {
@@ -1010,9 +1061,9 @@
     /* Hamburger button - hidden on desktop */
     .hamburger-btn {
       display: none;
-      background: var(--accent);
-      border: none;
-      color: white;
+      background: transparent;
+      border: 1px solid #333;
+      color: #ccc;
       width: 44px;
       height: 44px;
       border-radius: 8px;
@@ -1024,7 +1075,7 @@
 
     /* When sidebar is open, fade hamburger */
     body.sidebar-open .hamburger-btn {
-      background: #999;
+      background: #252530;
       opacity: 0.7;
     }
 
@@ -1543,12 +1594,14 @@
         <select class="user-dropdown" id="userDropdown">
           <option value="">Select business...</option>
         </select>
+        <div class="biz-selector" id="bizSelector" onclick="toggleBizDropdown()">
+          <i class="fas fa-store biz-icon"></i>
+          <span class="biz-name" id="bizName">Select business</span>
+          <i class="fas fa-chevron-down biz-chevron"></i>
+          <div class="biz-dropdown" id="bizDropdown"></div>
+        </div>
       </div>
       <div class="topbar-right">
-        <!-- Push bell moved to Config page -->
-        <button class="btn btn-icon topbar-action voice-btn" onclick="toggleVoice()" title="Toggle voice" id="voiceBtn">
-          <i class="fas fa-volume-mute" id="voiceIcon"></i>
-        </button>
         <button class="btn btn-icon topbar-action" onclick="newSession()" title="New Session" id="newSessionBtn">
           <i class="fas fa-plus"></i>
         </button>
@@ -1989,6 +2042,13 @@
             </button>
             <span style="font-size: 11px; color: #999; margin-left: 8px;">Get notified when new leads arrive</span>
           </div>
+          <div class="config-row">
+            <label>Voice Responses</label>
+            <button class="btn" id="voiceBtn" onclick="toggleVoice()" style="min-width: 120px;">
+              <i class="fas fa-volume-mute" id="voiceIcon"></i> <span id="voiceLabel">OFF</span>
+            </button>
+            <span style="font-size: 11px; color: #999; margin-left: 8px;">Read assistant responses aloud</span>
+          </div>
         </div>
       </div>
 
@@ -2397,9 +2457,12 @@
     function updateVoiceUI() {
       const btn = document.getElementById('voiceBtn');
       const icon = document.getElementById('voiceIcon');
+      const label = document.getElementById('voiceLabel');
+      if (!btn) return;
       btn.classList.toggle('active', voiceEnabled);
       btn.classList.toggle('speaking', voiceEnabled && isPlayingAudio);
       icon.className = voiceEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+      if (label) label.textContent = voiceEnabled ? 'ON' : 'OFF';
     }
 
     let ttsTextQueue = [];    // queue of text chunks waiting to be sent to API
@@ -2956,13 +3019,50 @@ Actively develop strategy based on:
     }
 
     function renderBusinessDropdown() {
+      // Keep hidden native select in sync (used by some existing code)
       const dropdown = document.getElementById('userDropdown');
       dropdown.innerHTML = '<option value="">Select business...</option>';
       businesses.forEach(b => {
         dropdown.innerHTML += `<option value="${b.id}">${b.name}</option>`;
       });
-      // Add "+ New Business" at the end
       dropdown.innerHTML += '<option value="__new__">+ New Business</option>';
+
+      // Render custom dropdown
+      const bizDropdown = document.getElementById('bizDropdown');
+      const bizName = document.getElementById('bizName');
+      if (bizDropdown) {
+        let html = '';
+        businesses.forEach(b => {
+          const isActive = b.id === currentBusinessId;
+          html += `<div class="biz-dropdown-item${isActive ? ' active' : ''}" data-biz-id="${b.id}">
+            <i class="fas fa-store" style="font-size:12px;color:#555;"></i> ${b.name}
+          </div>`;
+        });
+        html += `<div class="biz-dropdown-item" data-biz-id="__new__">
+          <i class="fas fa-plus"></i> New Business
+        </div>`;
+        bizDropdown.innerHTML = html;
+
+        // Click handlers
+        bizDropdown.querySelectorAll('.biz-dropdown-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = item.dataset.bizId;
+            closeBizDropdown();
+            if (id === '__new__') {
+              showCreateUserModal();
+            } else if (id) {
+              selectBusiness(id);
+            }
+          });
+        });
+      }
+
+      // Update displayed name
+      if (bizName) {
+        const current = businesses.find(b => b.id === currentBusinessId);
+        bizName.textContent = current ? current.name : 'Select business';
+      }
 
       // Also update delete dropdown if it exists
       const deleteDropdown = document.getElementById('deleteBusinessSelect');
@@ -2973,6 +3073,21 @@ Actively develop strategy based on:
         });
       }
     }
+
+    function toggleBizDropdown() {
+      const dd = document.getElementById('bizDropdown');
+      dd.classList.toggle('open');
+    }
+
+    function closeBizDropdown() {
+      const dd = document.getElementById('bizDropdown');
+      if (dd) dd.classList.remove('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.biz-selector')) closeBizDropdown();
+    });
 
     async function selectBusiness(businessId, startSession = true, skipWelcome = false) {
       // Show loading overlay
@@ -2985,6 +3100,7 @@ Actively develop strategy based on:
 
       currentBusinessId = businessId;
       saveState();
+      renderBusinessDropdown();
 
       // Connect SSE for real-time notifications
       connectSSE(businessId);
