@@ -325,6 +325,7 @@
     /* Chat page: input stays pinned, only messages scroll */
     #page-chat.active {
       overflow: hidden;
+      margin-bottom: -24px; /* cancel .content bottom padding so input sits flush */
     }
 
     .chat-page {
@@ -1088,6 +1089,12 @@
       }
 
       /* On mobile, chat page fills edge-to-edge */
+      #page-chat.active {
+        margin: -12px;
+        margin-top: 0;
+        margin-bottom: calc(-12px - env(safe-area-inset-bottom));
+      }
+
       #page-chat .chat-page {
         border-radius: 0;
         box-shadow: none;
@@ -3418,7 +3425,11 @@ Actively develop strategy based on:
       container.appendChild(scrollAnchor);
 
       function smoothScroll() {
-        // Disabled — lets user scroll freely during streaming
+        // Auto-scroll only if user is near the bottom (not scrolled up to read)
+        const gap = container.scrollHeight - container.scrollTop - container.clientHeight;
+        if (gap < 150) {
+          container.scrollTop = container.scrollHeight;
+        }
       }
 
       function flushDelta() {
