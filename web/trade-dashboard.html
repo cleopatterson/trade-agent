@@ -2839,10 +2839,18 @@ Actively develop strategy based on:
       window.visualViewport.addEventListener('resize', () => {
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(() => {
-          mainEl.style.height = window.visualViewport.height + 'px';
-          window.scrollTo(0, 0);
-          const container = document.getElementById('chatMessages');
-          if (container) container.scrollTop = container.scrollHeight;
+          const keyboardHeight = window.innerHeight - window.visualViewport.height;
+          if (keyboardHeight > 100) {
+            // Keyboard open — shrink layout to fit above keyboard
+            mainEl.style.height = window.visualViewport.height + 'px';
+            window.scrollTo(0, 0);
+            const container = document.getElementById('chatMessages');
+            if (container) container.scrollTop = container.scrollHeight;
+          } else {
+            // Keyboard closed — remove fixed height, let flex layout take over
+            mainEl.style.height = '';
+            window.scrollTo(0, 0);
+          }
         });
       });
       window.visualViewport.addEventListener('scroll', () => {
