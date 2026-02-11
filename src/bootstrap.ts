@@ -5,6 +5,7 @@
 import fs from "fs";
 import path from "path";
 import { CONFIG } from "./config.js";
+import { findSuburb, getSuburbsInRadius } from "./geo.js";
 
 // ============================================================================
 // CONSTANTS
@@ -475,7 +476,9 @@ export function buildStableContext(businessId: string): string {
   // Load trade-specific subcategory guide
   const tradeGuides: Record<string, string> = {
     paint: "painter_subcategories.md",
-    // Add more trades as guides are created: plumb, electric, build, etc.
+    plumb: "plumbing_subcategories.md",
+    electric: "electrical_subcategories.md",
+    carpent: "carpentry_subcategories.md",
   };
 
   const bizContent = readBootstrapFile(businessId, "BUSINESS.md") || "";
@@ -489,7 +492,7 @@ export function buildStableContext(businessId: string): string {
     const state = stateMatch ? stateMatch[1].toLowerCase() : "nsw"; // default Sydney
     const guideFile = cityGuides[state];
     if (guideFile) {
-      const guidePath = path.resolve(CONFIG.tradeAgentDir, `../resources/${guideFile}`);
+      const guidePath = path.resolve(CONFIG.tradeAgentDir, `resources/${guideFile}`);
       const guide = fs.readFileSync(guidePath, "utf-8");
       if (guide) {
         parts.push(`## Service Area Guide\n${guide}`);
@@ -507,7 +510,7 @@ export function buildStableContext(businessId: string): string {
     // Find matching guide by checking if trade contains key
     const guideKey = Object.keys(tradeGuides).find(key => trade.includes(key));
     if (guideKey) {
-      const guidePath = path.resolve(CONFIG.tradeAgentDir, `../resources/${tradeGuides[guideKey]}`);
+      const guidePath = path.resolve(CONFIG.tradeAgentDir, `resources/${tradeGuides[guideKey]}`);
       const guide = fs.readFileSync(guidePath, "utf-8");
       if (guide) {
         parts.push(`## Subcategory Guide\n${guide}`);
@@ -762,16 +765,55 @@ function randomFloat(min: number, max: number): number {
   return min + Math.random() * (max - min);
 }
 
-const SUBURBS = [
-  { name: "Balgowlah", postcode: "2093", km: 2.3 },
-  { name: "Manly", postcode: "2095", km: 4.1 },
-  { name: "Mosman", postcode: "2088", km: 5.8 },
-  { name: "Freshwater", postcode: "2096", km: 3.5 },
-  { name: "Dee Why", postcode: "2099", km: 8.2 },
-  { name: "Neutral Bay", postcode: "2089", km: 6.5 },
-  { name: "Cremorne", postcode: "2090", km: 7.1 },
-  { name: "Brookvale", postcode: "2100", km: 5.0 },
+const FALLBACK_SUBURBS = [
+  { name: "Balgowlah", postcode: "2093", state: "NSW", km: 2.3 },
+  { name: "Manly", postcode: "2095", state: "NSW", km: 4.1 },
+  { name: "Mosman", postcode: "2088", state: "NSW", km: 5.8 },
+  { name: "Freshwater", postcode: "2096", state: "NSW", km: 3.5 },
+  { name: "Dee Why", postcode: "2099", state: "NSW", km: 8.2 },
+  { name: "Neutral Bay", postcode: "2089", state: "NSW", km: 6.5 },
+  { name: "Cremorne", postcode: "2090", state: "NSW", km: 7.1 },
+  { name: "Brookvale", postcode: "2100", state: "NSW", km: 5.0 },
 ];
+
+/**
+ * Get suburbs near the tradie's base suburb for generating realistic local jobs.
+ * Falls back to hardcoded Sydney suburbs if lookup fails.
+ */
+export function getLocalSuburbs(businessId: string): Array<{ name: string; postcode: string; state: string; km: number }> {
+  try {
+    const bizContent = readBootstrapFile(businessId, "BUSINESS.md") || "";
+    const suburbMatch = bizContent.match(/\*\*Base Suburb:\*\*\s*([^\n,]+)/i);
+    if (!suburbMatch) return FALLBACK_SUBURBS;
+
+    const baseSuburbName = suburbMatch[1].trim().replace(/\*\([^)]+\)\*/g, "").trim();
+    if (!baseSuburbName) return FALLBACK_SUBURBS;
+
+    // Extract state from the Base Suburb line or from a separate state field
+    const locLine = bizContent.match(/\*\*Base Suburb:\*\*\s*([^\n]+)/i)?.[1] || "";
+    const stateMatch = locLine.match(/\b(NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b/i);
+    const state = stateMatch ? stateMatch[1].toUpperCase() : undefined;
+
+    const baseSuburb = findSuburb(baseSuburbName, state);
+    if (!baseSuburb) return FALLBACK_SUBURBS;
+
+    const nearby = getSuburbsInRadius(baseSuburb, 25, { state: baseSuburb.state, limit: 30 });
+    if (nearby.length < 3) return FALLBACK_SUBURBS;
+
+    // Pick 8-10 suburbs at varied distances
+    const picked: Array<{ name: string; postcode: string; state: string; km: number }> = [];
+    for (const s of nearby) {
+      if (picked.length >= 10) break;
+      if (s.name.toLowerCase() === baseSuburb.name.toLowerCase()) continue;
+      if (picked.some(p => p.name === s.name)) continue;
+      picked.push({ name: s.name, postcode: s.postcode, state: s.state, km: s.distance_km });
+    }
+
+    return picked.length >= 3 ? picked : FALLBACK_SUBURBS;
+  } catch {
+    return FALLBACK_SUBURBS;
+  }
+}
 
 const CUSTOMER_DATA = [
   { name: "Sarah Mitchell", first: "Sarah", phone: "0412 345 678" },
@@ -847,8 +889,10 @@ export function generateMockJob(
   trade?: string,
   subcategory?: string,
   urgency?: string,
+  localSuburbs?: Array<{ name: string; postcode: string; state: string; km: number }>,
 ): MockJob {
-  const suburb = randomChoice(SUBURBS);
+  const suburbs = localSuburbs || getLocalSuburbs(businessId);
+  const suburb = randomChoice(suburbs);
   const customer = randomChoice(CUSTOMER_DATA);
   const verified = Math.random() > 0.3;
 
@@ -907,7 +951,7 @@ export function generateMockJob(
     subcategory: selectedSub,
     size: randomChoice(["small", "medium", "large"]),
     suburb: suburb.name,
-    state: "NSW",
+    state: suburb.state,
     postcode: suburb.postcode,
     distance_km: suburb.km,
     budget_min,
@@ -942,7 +986,7 @@ export function generateMockJob(
 // JOB HISTORY GENERATION (ported from trade_simulation.py)
 // ============================================================================
 
-export function generateFakeJobHistory(trade: string, location?: string, numJobs?: number): Array<Record<string, unknown>> {
+export function generateFakeJobHistory(trade: string, location?: string, numJobs?: number, businessId?: string): Array<Record<string, unknown>> {
   const jobTemplates: Record<string, Array<{ type: string; names: string[]; sizes: string[]; priceRange: [number, number] }>> = {
     painting: [
       { type: "Interior House Painting", names: ["3 Room Repaint", "Master Bedroom", "Living Room Refresh", "Whole House Interior", "Hallway & Stairs"], sizes: ["small", "medium", "large"], priceRange: [400, 5000] },
@@ -958,7 +1002,22 @@ export function generateFakeJobHistory(trade: string, location?: string, numJobs
 
   const firstNames = ["Michael", "Sarah", "David", "Emma", "James", "Lisa", "Chris", "Rachel", "Tom", "Michelle", "Peter", "Rebecca", "Alex", "Nicole", "Ben", "Kate"];
   const lastNames = ["Smith", "Chen", "Wilson", "Patel", "Brown", "Wong", "Taylor", "Lee", "Martin", "Thompson", "Garcia", "Kim", "Anderson", "Clark", "White"];
-  const suburbs = ["Balgowlah", "Manly", "Freshwater", "Dee Why", "Mosman", "Neutral Bay", "Cremorne", "Fairlight", "Manly Vale", "Brookvale", "Curl Curl", "Narrabeen"];
+
+  // Use dynamic suburbs from tradie's location, or fallback to Sydney
+  let suburbs: string[];
+  if (businessId) {
+    const local = getLocalSuburbs(businessId);
+    suburbs = local.map(s => s.name);
+  } else if (location) {
+    suburbs = [location.split(",")[0].trim()];
+    // Pad with fallback suburbs if only one
+    for (const s of FALLBACK_SUBURBS) {
+      if (!suburbs.includes(s.name)) suburbs.push(s.name);
+      if (suburbs.length >= 10) break;
+    }
+  } else {
+    suburbs = FALLBACK_SUBURBS.map(s => s.name);
+  }
 
   const feedbackTemplates = [
     "Excellent work! Very professional and tidy.",
@@ -995,7 +1054,7 @@ export function generateFakeJobHistory(trade: string, location?: string, numJobs
       job_type: template.type,
       job_name: randomChoice(template.names),
       size,
-      suburb: location ? location.split(",")[0].trim() : randomChoice(suburbs),
+      suburb: randomChoice(suburbs),
       customer_name: `${randomChoice(firstNames)} ${randomChoice(lastNames)}`,
       final_price: price,
       customer_feedback: randomChoice(feedbackTemplates),
@@ -1014,32 +1073,31 @@ export function generateFakeJobHistory(trade: string, location?: string, numJobs
 // MATCHED JOBS GENERATION (ported from trade_simulation.py)
 // ============================================================================
 
-export function generateFakeMatchedJobs(trade: string, location?: string, numJobs?: number): { success: boolean; jobs_count: number; jobs: MockJob[] } {
+export function generateFakeMatchedJobs(trade: string, location?: string, numJobs?: number, businessId?: string): { success: boolean; jobs_count: number; jobs: MockJob[] } {
   const firstNames = ["Michael", "Sarah", "David", "Emma", "James", "Lisa", "Chris", "Rachel", "Tom", "Michelle", "Peter", "Rebecca", "Alex", "Nicole", "Ben", "Kate", "John", "Amy", "Mark", "Jessica"];
   const lastNames = ["Smith", "Chen", "Wilson", "Patel", "Brown", "Wong", "Taylor", "Lee", "Martin", "Thompson", "Garcia", "Kim", "Anderson", "Clark", "White", "Harris", "Young", "King"];
 
-  const defaultSuburbs = [
-    { suburb: "Balgowlah", postcode: "2093", state: "NSW" },
-    { suburb: "Manly", postcode: "2095", state: "NSW" },
-    { suburb: "Freshwater", postcode: "2096", state: "NSW" },
-    { suburb: "Dee Why", postcode: "2099", state: "NSW" },
-    { suburb: "Mosman", postcode: "2088", state: "NSW" },
-    { suburb: "Neutral Bay", postcode: "2089", state: "NSW" },
-    { suburb: "Cremorne", postcode: "2090", state: "NSW" },
-    { suburb: "Brookvale", postcode: "2100", state: "NSW" },
-  ];
-
+  // Use dynamic suburbs from tradie's location
   let suburbs: Array<{ suburb: string; postcode: string; state: string; distance: [number, number] }>;
-  if (location) {
+
+  const localSuburbs = businessId ? getLocalSuburbs(businessId) : null;
+  if (localSuburbs && localSuburbs !== FALLBACK_SUBURBS) {
+    suburbs = localSuburbs.map((s) => ({
+      suburb: s.name,
+      postcode: s.postcode,
+      state: s.state,
+      distance: [Math.max(0.5, s.km - 2), s.km + 3] as [number, number],
+    }));
+  } else if (location) {
     const parts = location.split(",");
     const baseSuburb = parts[0].trim();
     const baseState = parts[1]?.trim() || "NSW";
-    suburbs = [{ suburb: baseSuburb, postcode: "2000", state: baseState, distance: [0.5, 3.0] }];
-    for (let i = 0; i < Math.min(6, defaultSuburbs.length); i++) {
-      suburbs.push({ ...defaultSuburbs[i], distance: [3.0 + i * 2, 8.0 + i * 3] });
+    suburbs = [{ suburb: baseSuburb, postcode: "2000", state: baseState, distance: [0.5, 3.0] as [number, number] }];
+    for (const s of FALLBACK_SUBURBS.slice(0, 6)) {
+      suburbs.push({ suburb: s.name, postcode: s.postcode, state: s.state, distance: [3.0, 15.0] as [number, number] });
     }
   } else {
-    suburbs = defaultSuburbs.map((s) => ({ ...s, distance: [2.0, 15.0] as [number, number] }));
+    suburbs = FALLBACK_SUBURBS.map((s) => ({ suburb: s.name, postcode: s.postcode, state: s.state, distance: [2.0, 15.0] as [number, number] }));
   }
 
   const tradeLower = (trade || "").toLowerCase();

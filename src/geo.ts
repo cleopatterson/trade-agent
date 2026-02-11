@@ -25,7 +25,7 @@ let suburbsCache: Suburb[] | null = null;
 export function loadSuburbs(): Suburb[] {
   if (suburbsCache) return suburbsCache;
 
-  const csvPath = path.resolve(CONFIG.tradeAgentDir, "../resources/suburbs.csv");
+  const csvPath = path.resolve(CONFIG.tradeAgentDir, "resources/suburbs.csv");
   const content = fs.readFileSync(csvPath, "utf-8");
   const lines = content.trim().split("\n");
 

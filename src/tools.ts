@@ -570,7 +570,76 @@ export function createTools(businessId: string): AgentTool<any>[] {
 
         const route = sectionRoutes[field];
         if (route) {
-          updateBusinessSection(businessId, route.section, route.mdField, value);
+          // Services merge: when updating services, merge with existing rather than replacing
+          if (field === "services" && route.mdField === "Services") {
+            try {
+              const bizPath = path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md");
+              const bizContent = fs.readFileSync(bizPath, "utf-8");
+              const existingMatch = bizContent.match(/\*\*Services:\*\*\s*([^\n]+)/i);
+              const existing = existingMatch?.[1]?.trim() || "";
+              // Only merge if existing is not a placeholder
+              if (existing && !existing.startsWith("*") && !existing.startsWith("(")) {
+                const existingSet = new Set(existing.split(",").map(s => s.trim().toLowerCase()));
+                const newItems = value.split(",").map(s => s.trim());
+                const existingItems = existing.split(",").map(s => s.trim());
+                // Add genuinely new items
+                for (const item of newItems) {
+                  if (!existingSet.has(item.toLowerCase())) {
+                    existingItems.push(item);
+                  }
+                }
+                updateBusinessSection(businessId, route.section, route.mdField, existingItems.join(", "));
+              } else {
+                updateBusinessSection(businessId, route.section, route.mdField, value);
+              }
+            } catch {
+              updateBusinessSection(businessId, route.section, route.mdField, value);
+            }
+          } else if (field === "services_excluded" || field === "dont_do" || field === "excluded_services") {
+            // When setting excluded services, also remove them from the Services list
+            updateBusinessSection(businessId, route.section, route.mdField, value);
+            try {
+              const bizPath = path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md");
+              const bizContent = fs.readFileSync(bizPath, "utf-8");
+              const servicesMatch = bizContent.match(/\*\*Services:\*\*\s*([^\n]+)/i);
+              const servicesStr = servicesMatch?.[1]?.trim() || "";
+              if (servicesStr && !servicesStr.startsWith("*")) {
+                const excluded = new Set(value.split(",").map(s => s.trim().toLowerCase()));
+                const filtered = servicesStr.split(",").map(s => s.trim()).filter(s => !excluded.has(s.toLowerCase()));
+                if (filtered.length > 0 && filtered.length < servicesStr.split(",").length) {
+                  updateBusinessSection(businessId, "Services & Specialties", "Services", filtered.join(", "));
+                }
+              }
+            } catch { /* ok */ }
+          } else {
+            updateBusinessSection(businessId, route.section, route.mdField, value);
+          }
+
+          // After service area field updates, auto-populate "Areas You Cover" if placeholder
+          const serviceAreaFields = ["base_suburb", "service_radius", "areas_covered", "areas_you_cover", "service_area", "travel_notes"];
+          if (serviceAreaFields.includes(field)) {
+            try {
+              const bizPath = path.join(CONFIG.bootstrapDir, businessId, "BUSINESS.md");
+              const bizContent = fs.readFileSync(bizPath, "utf-8");
+              const areasMatch = bizContent.match(/\*\*Areas You Cover:\*\*\s*([^\n]*)/i);
+              const areasValue = areasMatch?.[1]?.trim() || "";
+              if (areasValue.includes("*(filled in") || areasValue === "") {
+                const baseMatch = bizContent.match(/\*\*Base Suburb:\*\*\s*([^\n]+)/i);
+                const radiusMatch = bizContent.match(/\*\*Service Radius:\*\*\s*(\d+)/i);
+                const baseSuburb = baseMatch?.[1]?.trim().replace(/\*\([^)]+\)\*/g, "").trim();
+                const radius = radiusMatch?.[1] || "20";
+                if (baseSuburb) {
+                  updateBusinessSection(businessId, "Service Areas", "Areas You Cover", `All areas within ${radius}km of ${baseSuburb}`);
+                }
+              }
+              // Also clear "Areas You Avoid" placeholder if still set
+              const avoidMatch = bizContent.match(/\*\*Areas You Avoid:\*\*\s*([^\n]*)/i);
+              const avoidValue = avoidMatch?.[1]?.trim() || "";
+              if (avoidValue.includes("*(filled in")) {
+                updateBusinessSection(businessId, "Service Areas", "Areas You Avoid", "None specified");
+              }
+            } catch { /* ok */ }
+          }
         } else {
           // Default: update in Basics
           updateBusinessField(businessId, params.field, value);

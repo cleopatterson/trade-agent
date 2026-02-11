@@ -560,13 +560,13 @@ app.get("/jobs/:businessId", (req, res) => {
 
     const trade = parseBusinessField(businessContent, "Trade") || "";
     const baseSuburb = parseBusinessField(businessContent, "Base Suburb") || parseBusinessField(businessContent, "Primary Suburbs");
-    const location = baseSuburb ? baseSuburb.split(",")[0].trim() + ", NSW" : "Sydney, NSW";
+    const location = baseSuburb || "Sydney, NSW";
 
     let jobs = loadMockJobs(businessId);
 
     if (jobs.length === 0 && trade) {
       // Auto-generate jobs
-      const result = generateFakeMatchedJobs(trade, location);
+      const result = generateFakeMatchedJobs(trade, location, undefined, businessId);
       if (result.success) {
         saveMockJobs(businessId, result.jobs);
         jobs = result.jobs;
@@ -631,10 +631,10 @@ app.post("/jobs/:businessId/refresh", (req, res) => {
     const trade = trades.find((t) => t.includes("paint")) || trades[0] || "painting";
 
     const baseSuburb = parseBusinessField(businessContent, "Base Suburb") || parseBusinessField(businessContent, "Primary Suburbs");
-    const location = baseSuburb ? baseSuburb.split(",")[0].trim() + ", NSW" : "Sydney, NSW";
+    const location = baseSuburb || "Sydney, NSW";
 
     const existingJobs = loadMockJobs(businessId);
-    const result = generateFakeMatchedJobs(trade, location);
+    const result = generateFakeMatchedJobs(trade, location, undefined, businessId);
 
     if (result.success) {
       const allJobs = [...existingJobs, ...result.jobs];
@@ -801,7 +801,7 @@ app.post("/import-profile", async (req, res) => {
     const location = profile.location || "";
     const timesHired = profile.times_hired || 8;
 
-    const history = generateFakeJobHistory(trade, location, Math.min(timesHired, 15));
+    const history = generateFakeJobHistory(trade, location, Math.min(timesHired, 15), business_id);
     if (history.length) {
       // Save raw history JSON
       const historyDir = path.join(CONFIG.memoryDir, business_id);
@@ -812,7 +812,7 @@ app.post("/import-profile", async (req, res) => {
     }
 
     // Step 5: Generate matched jobs
-    const matchedResult = generateFakeMatchedJobs(trade, location);
+    const matchedResult = generateFakeMatchedJobs(trade, location, undefined, business_id);
     if (matchedResult.success) {
       saveMockJobs(business_id, matchedResult.jobs);
     }

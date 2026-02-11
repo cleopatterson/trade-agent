@@ -128,11 +128,23 @@ export async function fetchSSProfileFromUrl(url: string): Promise<ScrapedProfile
         /\s*Response\s+time\s*:?\s*[^.]+\s*/gi,
         /\s*Member\s+since\s*:?\s*\d{4}\s*/gi,
         /\s*ABOUT\s+US\s*/gi,
+        /\s*Quoted\s+on\s*:?\s*\d+\s*jobs?\s*/gi,
       ];
       for (const p of cleanupPatterns) description = description.replace(p, " ");
       description = description.replace(/\s+/g, " ").trim();
       if (description.length > 1500) description = description.substring(0, 1500) + "...";
-      profile.description = description;
+
+      // Quality gate: reject junk descriptions
+      const isJunk =
+        description.length < 80 ||
+        /^\w+$/.test(description) ||  // single word
+        /^[\w\s,]+$/.test(description) && description.split(/\s+/).length <= 3 ||  // 1-3 plain words
+        /^(painting|plumbing|electrical|carpentry|fencing|roofing|tiling|landscaping|cleaning)/i.test(description) && description.length < 100;
+
+      if (!isJunk) {
+        profile.description = description;
+      }
+      // If junk, leave description undefined so template placeholder is used
     }
 
     // ── Rating ──
