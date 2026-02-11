@@ -48,6 +48,7 @@
       color: var(--text-main);
       display: flex;
       height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
       overflow: hidden;
     }
 
@@ -2829,6 +2830,25 @@ Actively develop strategy based on:
       { name: 'update_assistant_personality', description: 'Customize assistant name/style', icon: 'fa-magic', category: 'Learning' },
       { name: 'save_profile_to_bootstrap', description: 'Save scraped profile data to knowledge base', icon: 'fa-cloud-download-alt', category: 'Learning' },
     ];
+
+    // ===== VIEWPORT HEIGHT FIX (mobile keyboard) =====
+    function updateVh() {
+      const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty('--vh', vh + 'px');
+    }
+    updateVh();
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        updateVh();
+        // Scroll chat to bottom when keyboard opens so user can see messages
+        const container = document.getElementById('chatMessages');
+        if (container) {
+          setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+        }
+      });
+    } else {
+      window.addEventListener('resize', updateVh);
+    }
 
     // ===== INITIALIZATION =====
     document.addEventListener('DOMContentLoaded', async () => {
